@@ -7,7 +7,7 @@ Thumbs.db
 .idea/
 
 # Environment files
-.env
+backend/.env
 .env.*
 !.env.example
 
