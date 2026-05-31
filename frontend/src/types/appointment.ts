@@ -5,6 +5,7 @@ export type AppointmentStatus = 'scheduled' | 'completed' | 'cancelled';
 export interface StudyType {
   id: string;
   name: string;
+  description: string | null;
   duration: number;
 }
 

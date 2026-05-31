@@ -8,6 +8,11 @@ const mockUser = {
   role: 'patient',
 };
 
+export const mockStudyTypes = [
+  { id: 'st-uuid-1', name: 'Ecografía abdominal', description: 'Examen abdominal', duration: 30 },
+  { id: 'st-uuid-2', name: 'Ecografía obstétrica', description: null, duration: 45 },
+];
+
 export const mockAppointments = [
   {
     id: 'appt-uuid-1',
@@ -71,9 +76,20 @@ export const handlers = [
   }),
 
   http.get(`${API_BASE_URL}/study-types`, () => {
-    return HttpResponse.json([
-      { id: 'st-uuid-1', name: 'Ecografía abdominal', duration: 30 },
-      { id: 'st-uuid-2', name: 'Ecografía obstétrica', duration: 45 },
-    ]);
+    return HttpResponse.json(mockStudyTypes);
+  }),
+
+  http.post(`${API_BASE_URL}/study-types`, async ({ request }) => {
+    const body = await request.json() as Record<string, unknown>;
+    return HttpResponse.json({ ...mockStudyTypes[0], ...body, id: 'new-st-uuid' }, { status: 201 });
+  }),
+
+  http.patch(`${API_BASE_URL}/study-types/:id`, async ({ params, request }) => {
+    const body = await request.json() as Record<string, unknown>;
+    return HttpResponse.json({ ...mockStudyTypes[0], id: params.id, ...body });
+  }),
+
+  http.delete(`${API_BASE_URL}/study-types/:id`, () => {
+    return new HttpResponse(null, { status: 204 });
   }),
 ];
