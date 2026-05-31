@@ -1,9 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ActivitiesService } from '../activities/activities.service';
 import { ActivityType } from '../activities/entities/activity.entity';
-import { User } from '../users/entities/user.entity';
+import { User, UserRole } from '../users/entities/user.entity';
 import { Appointment, AppointmentStatus } from './entities/appointment.entity';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
@@ -18,17 +18,23 @@ export class AppointmentsService {
     private readonly activitiesService: ActivitiesService,
   ) {}
 
-  async create(dto: CreateAppointmentDto): Promise<Appointment> {
+  async create(dto: CreateAppointmentDto, currentUser: User): Promise<Appointment> {
+    const doctorId = currentUser.role === UserRole.DOCTOR ? currentUser.id : dto.doctorId;
+
+    if (!doctorId) {
+      throw new BadRequestException('doctorId is required when creating as admin');
+    }
+
     const patient = await this.userRepo.findOne({ where: { id: dto.patientId } });
     if (!patient) throw new NotFoundException(`Patient ${dto.patientId} not found`);
 
-    const doctor = await this.userRepo.findOne({ where: { id: dto.doctorId } });
-    if (!doctor) throw new NotFoundException(`Doctor ${dto.doctorId} not found`);
+    const doctor = await this.userRepo.findOne({ where: { id: doctorId } });
+    if (!doctor) throw new NotFoundException(`Doctor ${doctorId} not found`);
 
     const appointment = await this.appointmentRepo.save(
       this.appointmentRepo.create({
         patientId: dto.patientId,
-        doctorId: dto.doctorId,
+        doctorId,
         studyTypeId: dto.studyTypeId ?? null,
         scheduledDate: new Date(dto.scheduledDate),
         duration: dto.duration,
@@ -37,7 +43,7 @@ export class AppointmentsService {
       }),
     );
 
-    const full = await this.findOne(appointment.id);
+    const full = await this.findOneById(appointment.id);
     this.activitiesService.createActivity({
       type: ActivityType.APPOINTMENT_SCHEDULED,
       patientId: patient.id,
@@ -49,11 +55,17 @@ export class AppointmentsService {
     return full;
   }
 
-  findAll(patientId?: string, doctorId?: string, status?: AppointmentStatus): Promise<Appointment[]> {
+  findAll(currentUser: User, patientId?: string, doctorId?: string, status?: AppointmentStatus): Promise<Appointment[]> {
     const where: Record<string, unknown> = {};
     if (patientId) where.patientId = patientId;
-    if (doctorId) where.doctorId = doctorId;
     if (status) where.status = status;
+
+    // Doctors can only see their own appointments
+    if (currentUser.role === UserRole.DOCTOR) {
+      where.doctorId = currentUser.id;
+    } else if (doctorId) {
+      where.doctorId = doctorId;
+    }
 
     return this.appointmentRepo.find({
       where,
@@ -62,17 +74,15 @@ export class AppointmentsService {
     });
   }
 
-  async findOne(id: string): Promise<Appointment> {
-    const appointment = await this.appointmentRepo.findOne({
-      where: { id },
-      relations: ['patient', 'doctor', 'studyType'],
-    });
-    if (!appointment) throw new NotFoundException(`Appointment ${id} not found`);
+  async findOne(id: string, currentUser: User): Promise<Appointment> {
+    const appointment = await this.findOneById(id);
+    this.assertOwnership(appointment, currentUser);
     return appointment;
   }
 
-  async update(id: string, dto: UpdateAppointmentDto): Promise<Appointment> {
-    const before = await this.findOne(id);
+  async update(id: string, dto: UpdateAppointmentDto, currentUser: User): Promise<Appointment> {
+    const before = await this.findOneById(id);
+    this.assertOwnership(before, currentUser);
 
     if (before.status !== AppointmentStatus.SCHEDULED) {
       throw new BadRequestException('Only scheduled appointments can be updated');
@@ -86,7 +96,7 @@ export class AppointmentsService {
     const delta = this.buildDelta(before, dto);
     Object.assign(before, dto);
     const saved = await this.appointmentRepo.save(before);
-    const full  = await this.findOne(saved.id);
+    const full  = await this.findOneById(saved.id);
 
     this.activitiesService.createActivity({
       type: ActivityType.APPOINTMENT_UPDATED,
@@ -100,8 +110,9 @@ export class AppointmentsService {
     return full;
   }
 
-  async cancel(id: string): Promise<Appointment> {
-    const appointment = await this.findOne(id);
+  async cancel(id: string, currentUser: User): Promise<Appointment> {
+    const appointment = await this.findOneById(id);
+    this.assertOwnership(appointment, currentUser);
 
     if (appointment.status !== AppointmentStatus.SCHEDULED) {
       throw new BadRequestException('Only scheduled appointments can be cancelled');
@@ -109,7 +120,7 @@ export class AppointmentsService {
 
     appointment.status = AppointmentStatus.CANCELLED;
     await this.appointmentRepo.save(appointment);
-    const full = await this.findOne(id);
+    const full = await this.findOneById(id);
 
     this.activitiesService.createActivity({
       type: ActivityType.APPOINTMENT_CANCELLED,
@@ -122,8 +133,9 @@ export class AppointmentsService {
     return full;
   }
 
-  async complete(id: string): Promise<Appointment> {
-    const appointment = await this.findOne(id);
+  async complete(id: string, currentUser: User): Promise<Appointment> {
+    const appointment = await this.findOneById(id);
+    this.assertOwnership(appointment, currentUser);
 
     if (appointment.status !== AppointmentStatus.SCHEDULED) {
       throw new BadRequestException('Only scheduled appointments can be completed');
@@ -131,7 +143,7 @@ export class AppointmentsService {
 
     appointment.status = AppointmentStatus.COMPLETED;
     await this.appointmentRepo.save(appointment);
-    const full = await this.findOne(id);
+    const full = await this.findOneById(id);
 
     this.activitiesService.createActivity({
       type: ActivityType.APPOINTMENT_COMPLETED,
@@ -142,6 +154,22 @@ export class AppointmentsService {
     });
 
     return full;
+  }
+
+  // Internal fetch without ownership check — used by other services
+  findOneById(id: string): Promise<Appointment> {
+    return this.appointmentRepo
+      .findOne({ where: { id }, relations: ['patient', 'doctor', 'studyType'] })
+      .then((a) => {
+        if (!a) throw new NotFoundException(`Appointment ${id} not found`);
+        return a;
+      });
+  }
+
+  private assertOwnership(appointment: Appointment, currentUser: User): void {
+    if (currentUser.role === UserRole.DOCTOR && appointment.doctorId !== currentUser.id) {
+      throw new ForbiddenException('You can only access your own appointments');
+    }
   }
 
   private buildSnapshot(a: Appointment): Record<string, unknown> {

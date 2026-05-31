@@ -1,10 +1,10 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ActivitiesService } from '../activities/activities.service';
 import { ActivityType } from '../activities/entities/activity.entity';
 import { Appointment, AppointmentStatus } from '../appointments/entities/appointment.entity';
-import { User } from '../users/entities/user.entity';
+import { User, UserRole } from '../users/entities/user.entity';
 import { CreateStudyResultDto } from './dto/create-study-result.dto';
 import { UpdateStudyResultDto } from './dto/update-study-result.dto';
 import { StudyResult } from './entities/study-result.entity';
@@ -21,7 +21,7 @@ export class StudyResultsService {
     private readonly activitiesService: ActivitiesService,
   ) {}
 
-  async create(dto: CreateStudyResultDto): Promise<StudyResult> {
+  async create(dto: CreateStudyResultDto, currentUser: User): Promise<StudyResult> {
     const appointment = await this.appointmentRepo.findOne({
       where: { id: dto.appointmentId },
       relations: ['studyType'],
@@ -29,6 +29,11 @@ export class StudyResultsService {
     if (!appointment) throw new NotFoundException(`Appointment ${dto.appointmentId} not found`);
     if (appointment.status === AppointmentStatus.CANCELLED) {
       throw new BadRequestException('Cannot add results to a cancelled appointment');
+    }
+
+    // Doctors can only emit results for their own appointments
+    if (currentUser.role === UserRole.DOCTOR && appointment.doctorId !== currentUser.id) {
+      throw new ForbiddenException('You can only emit results for your own appointments');
     }
 
     const existing = await this.resultRepo.findOne({ where: { appointmentId: dto.appointmentId } });
@@ -60,11 +65,17 @@ export class StudyResultsService {
     return fullResult;
   }
 
-  findAll(patientId?: string, doctorId?: string, appointmentId?: string): Promise<StudyResult[]> {
+  findAll(currentUser: User, patientId?: string, doctorId?: string, appointmentId?: string): Promise<StudyResult[]> {
     const where: Record<string, string> = {};
     if (patientId) where.patientId = patientId;
-    if (doctorId) where.doctorId = doctorId;
     if (appointmentId) where.appointmentId = appointmentId;
+
+    // Doctors only see their own results
+    if (currentUser.role === UserRole.DOCTOR) {
+      where.doctorId = currentUser.id;
+    } else if (doctorId) {
+      where.doctorId = doctorId;
+    }
 
     return this.resultRepo.find({
       where,
@@ -89,8 +100,13 @@ export class StudyResultsService {
     });
   }
 
-  async update(id: string, dto: UpdateStudyResultDto): Promise<StudyResult> {
+  async update(id: string, dto: UpdateStudyResultDto, currentUser: User): Promise<StudyResult> {
     const result = await this.findOne(id);
+
+    if (currentUser.role === UserRole.DOCTOR && result.doctorId !== currentUser.id) {
+      throw new ForbiddenException('You can only update your own study results');
+    }
+
     Object.assign(result, dto);
     const saved = await this.resultRepo.save(result);
     const full  = await this.findOne(saved.id);

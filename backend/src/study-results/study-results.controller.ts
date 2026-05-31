@@ -1,7 +1,8 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { UserRole } from '../users/entities/user.entity';
+import { User, UserRole } from '../users/entities/user.entity';
 import { CreateStudyResultDto } from './dto/create-study-result.dto';
 import { UpdateStudyResultDto } from './dto/update-study-result.dto';
 import { StudyResultsService } from './study-results.service';
@@ -15,8 +16,8 @@ export class StudyResultsController {
   @ApiOperation({ summary: 'Create a study result for an appointment' })
   @Roles(UserRole.ADMIN, UserRole.DOCTOR)
   @Post()
-  create(@Body() dto: CreateStudyResultDto) {
-    return this.studyResultsService.create(dto);
+  create(@Body() dto: CreateStudyResultDto, @CurrentUser() currentUser: User) {
+    return this.studyResultsService.create(dto, currentUser);
   }
 
   @ApiOperation({ summary: 'List study results with optional filters' })
@@ -25,11 +26,12 @@ export class StudyResultsController {
   @ApiQuery({ name: 'appointmentId', required: false })
   @Get()
   findAll(
+    @CurrentUser() currentUser: User,
     @Query('patientId') patientId?: string,
     @Query('doctorId') doctorId?: string,
     @Query('appointmentId') appointmentId?: string,
   ) {
-    return this.studyResultsService.findAll(patientId, doctorId, appointmentId);
+    return this.studyResultsService.findAll(currentUser, patientId, doctorId, appointmentId);
   }
 
   @ApiOperation({ summary: 'Get study results by appointment' })
@@ -47,7 +49,11 @@ export class StudyResultsController {
   @ApiOperation({ summary: 'Update findings or conclusion' })
   @Roles(UserRole.ADMIN, UserRole.DOCTOR)
   @Patch(':id')
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateStudyResultDto) {
-    return this.studyResultsService.update(id, dto);
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateStudyResultDto,
+    @CurrentUser() currentUser: User,
+  ) {
+    return this.studyResultsService.update(id, dto, currentUser);
   }
 }

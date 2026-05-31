@@ -1,4 +1,4 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { ActivitiesService } from '../activities/activities.service';
@@ -24,6 +24,17 @@ const mockDoctor: User = {
   fullName: 'Dra. García',
   passwordHash: 'hash',
   role: UserRole.DOCTOR,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
+
+const mockAdmin: User = {
+  id: 'admin-uuid',
+  code: 3,
+  email: 'admin@test.com',
+  fullName: 'Admin User',
+  passwordHash: 'hash',
+  role: UserRole.ADMIN,
   createdAt: new Date(),
   updatedAt: new Date(),
 };
@@ -78,32 +89,56 @@ describe('AppointmentsService', () => {
     jest.clearAllMocks();
   });
 
+  // ─── create ──────────────────────────────────────────────────────────────────
+
   describe('create', () => {
-    it('creates and returns an appointment', async () => {
+    it('admin creates appointment with explicit doctorId', async () => {
       mockUserRepo.findOne
         .mockResolvedValueOnce(mockPatient)
         .mockResolvedValueOnce(mockDoctor);
       mockAppointmentRepo.create.mockReturnValue(mockAppointment);
       mockAppointmentRepo.save.mockResolvedValue(mockAppointment);
-      mockAppointmentRepo.findOne.mockResolvedValue(mockAppointment); // for findOne after save
+      mockAppointmentRepo.findOne.mockResolvedValue(mockAppointment);
 
-      const result = await service.create({
-        patientId: mockPatient.id,
-        doctorId: mockDoctor.id,
-        scheduledDate: '2026-06-01T10:00:00Z',
-        duration: 30,
-      });
+      const result = await service.create(
+        { patientId: mockPatient.id, doctorId: mockDoctor.id, scheduledDate: '2026-06-01T10:00:00Z', duration: 30 },
+        mockAdmin,
+      );
 
       expect(result).toEqual(mockAppointment);
-      expect(mockAppointmentRepo.save).toHaveBeenCalled();
       expect(mockActivitiesService.createActivity).toHaveBeenCalled();
+    });
+
+    it('doctor is auto-assigned as doctorId regardless of DTO', async () => {
+      mockUserRepo.findOne
+        .mockResolvedValueOnce(mockPatient)
+        .mockResolvedValueOnce(mockDoctor);
+      mockAppointmentRepo.create.mockReturnValue(mockAppointment);
+      mockAppointmentRepo.save.mockResolvedValue(mockAppointment);
+      mockAppointmentRepo.findOne.mockResolvedValue(mockAppointment);
+
+      await service.create(
+        { patientId: mockPatient.id, scheduledDate: '2026-06-01T10:00:00Z', duration: 30 },
+        mockDoctor,
+      );
+
+      // The create call should use currentUser.id, not any DTO doctorId
+      expect(mockAppointmentRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ doctorId: mockDoctor.id }),
+      );
+    });
+
+    it('throws BadRequestException when admin omits doctorId', async () => {
+      await expect(
+        service.create({ patientId: mockPatient.id, scheduledDate: '2026-06-01T10:00:00Z', duration: 30 }, mockAdmin),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('throws NotFoundException when patient does not exist', async () => {
       mockUserRepo.findOne.mockResolvedValue(null);
 
       await expect(
-        service.create({ patientId: 'bad-id', doctorId: mockDoctor.id, scheduledDate: '2026-06-01T10:00:00Z', duration: 30 }),
+        service.create({ patientId: 'bad-id', scheduledDate: '2026-06-01T10:00:00Z', duration: 30 }, mockDoctor),
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -113,33 +148,55 @@ describe('AppointmentsService', () => {
         .mockResolvedValueOnce(null);
 
       await expect(
-        service.create({ patientId: mockPatient.id, doctorId: 'bad-id', scheduledDate: '2026-06-01T10:00:00Z', duration: 30 }),
+        service.create({ patientId: mockPatient.id, scheduledDate: '2026-06-01T10:00:00Z', duration: 30 }, mockDoctor),
       ).rejects.toThrow(NotFoundException);
     });
   });
 
+  // ─── findOne ─────────────────────────────────────────────────────────────────
+
   describe('findOne', () => {
-    it('returns the appointment when found', async () => {
+    it('returns the appointment for an admin', async () => {
       mockAppointmentRepo.findOne.mockResolvedValue(mockAppointment);
 
-      const result = await service.findOne('appt-uuid');
+      const result = await service.findOne('appt-uuid', mockAdmin);
 
       expect(result).toEqual(mockAppointment);
+    });
+
+    it('returns the appointment when the doctor owns it', async () => {
+      mockAppointmentRepo.findOne.mockResolvedValue(mockAppointment);
+
+      const result = await service.findOne('appt-uuid', mockDoctor);
+
+      expect(result).toEqual(mockAppointment);
+    });
+
+    it('throws ForbiddenException when a doctor accesses another doctor\'s appointment', async () => {
+      const otherDoctor: User = { ...mockDoctor, id: 'other-doctor-uuid' };
+      mockAppointmentRepo.findOne.mockResolvedValue(mockAppointment);
+
+      await expect(service.findOne('appt-uuid', otherDoctor)).rejects.toThrow(ForbiddenException);
     });
 
     it('throws NotFoundException when appointment does not exist', async () => {
       mockAppointmentRepo.findOne.mockResolvedValue(null);
 
-      await expect(service.findOne('bad-id')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('bad-id', mockAdmin)).rejects.toThrow(NotFoundException);
     });
   });
 
+  // ─── cancel ──────────────────────────────────────────────────────────────────
+
   describe('cancel', () => {
     it('sets status to cancelled', async () => {
-      mockAppointmentRepo.findOne.mockResolvedValue({ ...mockAppointment });
+      const cancelled = { ...mockAppointment, status: AppointmentStatus.CANCELLED };
+      mockAppointmentRepo.findOne
+        .mockResolvedValueOnce({ ...mockAppointment })
+        .mockResolvedValueOnce(cancelled);
       mockAppointmentRepo.save.mockImplementation((a) => Promise.resolve(a));
 
-      const result = await service.cancel('appt-uuid');
+      const result = await service.cancel('appt-uuid', mockAdmin);
 
       expect(result.status).toBe(AppointmentStatus.CANCELLED);
     });
@@ -147,16 +204,28 @@ describe('AppointmentsService', () => {
     it('throws BadRequestException when appointment is already completed', async () => {
       mockAppointmentRepo.findOne.mockResolvedValue({ ...mockAppointment, status: AppointmentStatus.COMPLETED });
 
-      await expect(service.cancel('appt-uuid')).rejects.toThrow(BadRequestException);
+      await expect(service.cancel('appt-uuid', mockAdmin)).rejects.toThrow(BadRequestException);
+    });
+
+    it('throws ForbiddenException when doctor tries to cancel another doctor\'s appointment', async () => {
+      const otherDoctor: User = { ...mockDoctor, id: 'other-doctor-uuid' };
+      mockAppointmentRepo.findOne.mockResolvedValue(mockAppointment);
+
+      await expect(service.cancel('appt-uuid', otherDoctor)).rejects.toThrow(ForbiddenException);
     });
   });
 
+  // ─── complete ────────────────────────────────────────────────────────────────
+
   describe('complete', () => {
     it('sets status to completed', async () => {
-      mockAppointmentRepo.findOne.mockResolvedValue({ ...mockAppointment });
+      const completed = { ...mockAppointment, status: AppointmentStatus.COMPLETED };
+      mockAppointmentRepo.findOne
+        .mockResolvedValueOnce({ ...mockAppointment })
+        .mockResolvedValueOnce(completed);
       mockAppointmentRepo.save.mockImplementation((a) => Promise.resolve(a));
 
-      const result = await service.complete('appt-uuid');
+      const result = await service.complete('appt-uuid', mockAdmin);
 
       expect(result.status).toBe(AppointmentStatus.COMPLETED);
     });
@@ -164,7 +233,14 @@ describe('AppointmentsService', () => {
     it('throws BadRequestException when appointment is already cancelled', async () => {
       mockAppointmentRepo.findOne.mockResolvedValue({ ...mockAppointment, status: AppointmentStatus.CANCELLED });
 
-      await expect(service.complete('appt-uuid')).rejects.toThrow(BadRequestException);
+      await expect(service.complete('appt-uuid', mockAdmin)).rejects.toThrow(BadRequestException);
+    });
+
+    it('throws ForbiddenException when doctor tries to complete another doctor\'s appointment', async () => {
+      const otherDoctor: User = { ...mockDoctor, id: 'other-doctor-uuid' };
+      mockAppointmentRepo.findOne.mockResolvedValue(mockAppointment);
+
+      await expect(service.complete('appt-uuid', otherDoctor)).rejects.toThrow(ForbiddenException);
     });
   });
 });

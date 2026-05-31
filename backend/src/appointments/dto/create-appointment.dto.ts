@@ -3,7 +3,7 @@ import { IsDateString, IsInt, IsOptional, IsString, IsUUID, Min } from 'class-va
 
 export class CreateAppointmentDto {
   @ApiProperty() @IsUUID() patientId: string;
-  @ApiProperty() @IsUUID() doctorId: string;
+  @ApiPropertyOptional() @IsOptional() @IsUUID() doctorId?: string;
 
   @ApiPropertyOptional() @IsOptional() @IsUUID() studyTypeId?: string;
 
