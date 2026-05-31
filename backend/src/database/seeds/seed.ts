@@ -511,6 +511,11 @@ async function seedEmbeddings(ds: DataSource): Promise<void> {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 async function seed(): Promise<void> {
+  if (process.env.ALLOW_SEED !== 'true') {
+    console.error('Seed is disabled. Set ALLOW_SEED=true to run it.');
+    process.exit(1);
+  }
+
   await dataSource.initialize();
   console.log('Connected to database\n');
 
