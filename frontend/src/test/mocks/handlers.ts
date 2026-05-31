@@ -9,8 +9,8 @@ const mockUser = {
 };
 
 export const mockStudyTypes = [
-  { id: 'st-uuid-1', name: 'Ecografía abdominal', description: 'Examen abdominal', duration: 30 },
-  { id: 'st-uuid-2', name: 'Ecografía obstétrica', description: null, duration: 45 },
+  { id: 'st-uuid-1', name: 'Ecografía abdominal', description: 'Examen abdominal', duration: 30, address: 'Clínica del Valle, Av. Simón López Nro. 512' },
+  { id: 'st-uuid-2', name: 'Ecografía obstétrica', description: null, duration: 45, address: null },
 ];
 
 export const mockAppointments = [

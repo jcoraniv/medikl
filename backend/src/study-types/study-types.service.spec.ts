@@ -9,6 +9,7 @@ const mockStudyType: StudyType = {
   name: 'Ecografía abdominal',
   description: 'Examen abdominal',
   duration: 30,
+  address: 'Clínica del Valle',
   createdAt: new Date(),
   updatedAt: new Date(),
 };

@@ -6,6 +6,11 @@ export class CreateStudyTypeDto {
 
   @ApiPropertyOptional() @IsOptional() @IsString() description?: string;
 
+  @ApiPropertyOptional({ example: 'Clínica del Valle, Av. Simón López Nro. 512' })
+  @IsOptional()
+  @IsString()
+  address?: string;
+
   @ApiProperty({ example: 30, description: 'Duration in minutes' })
   @IsInt()
   @Min(5)

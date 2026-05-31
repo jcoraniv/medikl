@@ -11,4 +11,7 @@ export class StudyType extends BaseEntity {
 
   @Column({ type: 'int', default: 30 })
   duration: number;
+
+  @Column({ type: 'text', nullable: true })
+  address: string | null;
 }

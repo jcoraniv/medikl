@@ -5,6 +5,7 @@ export interface StudyTypePayload {
   name: string;
   description?: string;
   duration: number;
+  address?: string;
 }
 
 export const studyTypesService = {
