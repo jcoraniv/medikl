@@ -76,7 +76,7 @@ async function seedUsers(ds: DataSource) {
 
 // ─── Study Types ──────────────────────────────────────────────────────────────
 
-async function seedStudyTypes(ds: DataSource): Promise<Record<string, StudyType>> {
+async function seedStudyTypes(ds: DataSource, admin: User): Promise<Record<string, StudyType>> {
   const repo = ds.getRepository(StudyType);
 
   const MEDIKL  = 'Medikl, Av. Panamericana, Edificio Medikal Piso 8';
@@ -106,10 +106,10 @@ async function seedStudyTypes(ds: DataSource): Promise<Record<string, StudyType>
   for (const data of catalog) {
     const existing = await repo.findOne({ where: { name: data.name } });
     if (existing) {
-      result[data.name] = await repo.save({ ...existing, ...data });
+      result[data.name] = await repo.save({ ...existing, ...data, createdById: existing.createdById ?? admin.id });
       console.log(`  [ok]   ${data.name} (updated)`);
     } else {
-      result[data.name] = await repo.save(repo.create(data));
+      result[data.name] = await repo.save(repo.create({ ...data, createdById: admin.id }));
       console.log(`  [ok]   ${data.name} (created)`);
     }
   }
@@ -466,7 +466,7 @@ async function seed(): Promise<void> {
   const users = await seedUsers(dataSource);
 
   console.log('\nSeeding study types...');
-  const studyTypes = await seedStudyTypes(dataSource);
+  const studyTypes = await seedStudyTypes(dataSource, users.admin);
 
   console.log('\nSeeding appointments...');
   const appointments = await seedAppointments(dataSource, users, studyTypes);

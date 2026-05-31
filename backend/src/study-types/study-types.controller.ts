@@ -1,7 +1,8 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { UserRole } from '../users/entities/user.entity';
+import { User, UserRole } from '../users/entities/user.entity';
 import { CreateStudyTypeDto } from './dto/create-study-type.dto';
 import { UpdateStudyTypeDto } from './dto/update-study-type.dto';
 import { StudyTypesService } from './study-types.service';
@@ -25,10 +26,10 @@ export class StudyTypesController {
   }
 
   @ApiOperation({ summary: 'Create a study type' })
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.DOCTOR)
   @Post()
-  create(@Body() dto: CreateStudyTypeDto) {
-    return this.studyTypesService.create(dto);
+  create(@Body() dto: CreateStudyTypeDto, @CurrentUser() currentUser: User) {
+    return this.studyTypesService.create(dto, currentUser);
   }
 
   @ApiOperation({ summary: 'Update a study type' })
@@ -38,11 +39,11 @@ export class StudyTypesController {
     return this.studyTypesService.update(id, dto);
   }
 
-  @ApiOperation({ summary: 'Delete a study type' })
-  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Soft-delete a study type' })
+  @Roles(UserRole.ADMIN, UserRole.DOCTOR)
   @Delete(':id')
   @HttpCode(204)
-  remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.studyTypesService.remove(id);
+  remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() currentUser: User) {
+    return this.studyTypesService.remove(id, currentUser);
   }
 }

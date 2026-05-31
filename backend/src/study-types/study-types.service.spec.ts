@@ -1,8 +1,44 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { StudyTypesService } from './study-types.service';
+import { User, UserRole } from '../users/entities/user.entity';
 import { StudyType } from './entities/study-type.entity';
+import { StudyTypesService } from './study-types.service';
+
+const DOCTOR_ID = 'doctor-uuid';
+
+const mockAdminUser: User = {
+  id: 'admin-uuid',
+  code: 99,
+  email: 'admin@test.com',
+  fullName: 'Admin User',
+  passwordHash: 'hash',
+  role: UserRole.ADMIN,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
+
+const mockDoctorUser: User = {
+  id: DOCTOR_ID,
+  code: 2,
+  email: 'doctor@test.com',
+  fullName: 'Dra. García',
+  passwordHash: 'hash',
+  role: UserRole.DOCTOR,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
+
+const mockOtherDoctor: User = {
+  id: 'other-doctor-uuid',
+  code: 3,
+  email: 'other@test.com',
+  fullName: 'Dr. Otro',
+  passwordHash: 'hash',
+  role: UserRole.DOCTOR,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
 
 const mockStudyType: StudyType = {
   id: 'st-uuid',
@@ -10,6 +46,8 @@ const mockStudyType: StudyType = {
   description: 'Examen abdominal',
   duration: 30,
   address: 'Clínica del Valle',
+  createdById: DOCTOR_ID,
+  createdBy: mockDoctorUser,
   deletedAt: null,
   createdAt: new Date(),
   updatedAt: new Date(),
@@ -61,21 +99,23 @@ describe('StudyTypesService', () => {
   });
 
   describe('create', () => {
-    it('creates and returns a new study type', async () => {
+    it('creates and stores createdById from currentUser', async () => {
       mockRepo.findOne.mockResolvedValue(null);
       mockRepo.create.mockReturnValue(mockStudyType);
       mockRepo.save.mockResolvedValue(mockStudyType);
 
-      const result = await service.create({ name: 'Ecografía abdominal', duration: 30 });
+      const result = await service.create({ name: 'Ecografía abdominal', duration: 30 }, mockDoctorUser);
 
       expect(result).toEqual(mockStudyType);
-      expect(mockRepo.save).toHaveBeenCalled();
+      expect(mockRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ createdById: DOCTOR_ID }),
+      );
     });
 
     it('throws ConflictException when name already exists', async () => {
       mockRepo.findOne.mockResolvedValue(mockStudyType);
 
-      await expect(service.create({ name: 'Ecografía abdominal', duration: 30 }))
+      await expect(service.create({ name: 'Ecografía abdominal', duration: 30 }, mockAdminUser))
         .rejects.toThrow(ConflictException);
     });
   });
@@ -101,17 +141,30 @@ describe('StudyTypesService', () => {
   });
 
   describe('remove', () => {
-    it('soft-deletes the study type', async () => {
+    it('admin can soft-delete any study type', async () => {
       mockRepo.findOne.mockResolvedValue(mockStudyType);
       mockRepo.softDelete.mockResolvedValue(undefined);
 
-      await expect(service.remove('st-uuid')).resolves.toBeUndefined();
+      await expect(service.remove('st-uuid', mockAdminUser)).resolves.toBeUndefined();
       expect(mockRepo.softDelete).toHaveBeenCalledWith('st-uuid');
+    });
+
+    it('doctor can soft-delete their own study type', async () => {
+      mockRepo.findOne.mockResolvedValue(mockStudyType);
+      mockRepo.softDelete.mockResolvedValue(undefined);
+
+      await expect(service.remove('st-uuid', mockDoctorUser)).resolves.toBeUndefined();
+    });
+
+    it('throws ForbiddenException when doctor deletes another doctor\'s study type', async () => {
+      mockRepo.findOne.mockResolvedValue(mockStudyType);
+
+      await expect(service.remove('st-uuid', mockOtherDoctor)).rejects.toThrow(ForbiddenException);
     });
 
     it('throws NotFoundException when study type does not exist', async () => {
       mockRepo.findOne.mockResolvedValue(null);
-      await expect(service.remove('bad-id')).rejects.toThrow(NotFoundException);
+      await expect(service.remove('bad-id', mockAdminUser)).rejects.toThrow(NotFoundException);
     });
   });
 });
