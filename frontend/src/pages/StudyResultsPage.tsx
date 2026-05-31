@@ -238,7 +238,7 @@ export function StudyResultsPage() {
       ) : results.length === 0 ? (
         <p className="py-12 text-center text-muted-foreground">No study results yet.</p>
       ) : (
-        <div className="rounded-md border">
+        <div className="rounded-md border overflow-x-auto">
           <table className="w-full" data-testid="results-table">
             <thead className="border-b bg-muted/50">
               <tr>

@@ -154,7 +154,7 @@ export function AppointmentsPage() {
       ) : appointments.length === 0 ? (
         <p className="py-12 text-center text-muted-foreground">No appointments yet.</p>
       ) : (
-        <div className="rounded-md border">
+        <div className="rounded-md border overflow-x-auto">
           <table className="w-full">
             <thead className="border-b bg-muted/50">
               <tr>

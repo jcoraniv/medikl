@@ -206,7 +206,7 @@ export function StudyTypesPage() {
           No study types yet.
         </p>
       ) : (
-        <div className="rounded-md border">
+        <div className="rounded-md border overflow-x-auto">
           <table className="w-full">
             <thead className="border-b bg-muted/50">
               <tr>
