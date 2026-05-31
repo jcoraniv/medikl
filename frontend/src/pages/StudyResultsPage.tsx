@@ -251,7 +251,7 @@ export function StudyResultsPage() {
             </thead>
             <tbody>
               {results.map((r) => (
-                <tr key={r.id} className="border-b last:border-0">
+                <tr key={r.id} className="border-b last:border-0 [&>td]:transition-all [&>td]:duration-150 hover:[&>td]:py-4 hover:[&>td]:bg-muted/50">
                   <td className="py-3 px-4 text-sm font-medium">
                     <span>{r.patient.fullName}</span>
                     <span className="ml-1 text-xs text-muted-foreground font-mono">HC-{r.patient.code}</span>

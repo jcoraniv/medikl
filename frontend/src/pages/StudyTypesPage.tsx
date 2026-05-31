@@ -228,7 +228,7 @@ export function StudyTypesPage() {
             </thead>
             <tbody>
               {studyTypes.map((st) => (
-                <tr key={st.id} className="border-b last:border-0">
+                <tr key={st.id} className="border-b last:border-0 [&>td]:transition-all [&>td]:duration-150 hover:[&>td]:py-4 hover:[&>td]:bg-muted/50">
                   <td className="py-3 px-4 text-sm font-medium">{st.name}</td>
                   <td className="py-3 px-4 text-sm text-muted-foreground">
                     {st.description ?? '—'}

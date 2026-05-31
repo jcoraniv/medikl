@@ -44,7 +44,7 @@ function AppointmentRow({
   const hasActions = canWrite && (isScheduled || canEmit);
 
   return (
-    <tr className="border-b last:border-0">
+    <tr className="border-b last:border-0 [&>td]:transition-all [&>td]:duration-150 hover:[&>td]:py-4 hover:[&>td]:bg-muted/50">
       <td className="py-3 px-4 text-xs font-mono text-muted-foreground">#{appointment.code}</td>
       <td className="py-3 px-4 text-sm">
         <span>{appointment.patient?.fullName ?? '—'}</span>
@@ -64,7 +64,7 @@ function AppointmentRow({
         {hasActions && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+              <Button size="sm" variant="ghost" className="h-8 w-8 p-0 transition-all duration-200 data-[state=open]:rotate-90 data-[state=open]:bg-accent">
                 <MoreHorizontal size={16} />
                 <span className="sr-only">Open menu</span>
               </Button>
