@@ -43,6 +43,7 @@ const editSchema = z.object({
   fullName: z.string().min(1, 'Required'),
   email: z.email('Invalid email'),
   phone: z.string().optional(),
+  role: z.enum(ROLES),
 });
 
 type CreateValues = z.infer<typeof createSchema>;
@@ -74,7 +75,7 @@ function UserForm({
   } = useForm<CreateValues | EditValues>({
     resolver: zodResolver(isEdit ? editSchema : createSchema),
     defaultValues: initial
-      ? { fullName: initial.fullName, email: initial.email, phone: initial.phone ?? '' }
+      ? { fullName: initial.fullName, email: initial.email, phone: initial.phone ?? '', role: initial.role as typeof ROLES[number] }
       : { fullName: '', email: '', password: '', phone: '', role: 'patient' },
   });
 
@@ -85,7 +86,7 @@ function UserForm({
         return usersService.update(initial!.id, { ...d, phone: d.phone || null });
       }
       const d = data as CreateValues;
-      return usersService.create({ ...d, phone: d.phone || null });
+      return usersService.create({ ...d, phone: d.phone || null, role: d.role });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [queryKey] });
@@ -118,39 +119,37 @@ function UserForm({
       </div>
 
       {!isEdit && (
-        <>
-          <div className="space-y-1">
-            <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" {...register('password')} />
-            {'password' in errors && errors.password && (
-              <p className="text-xs text-destructive">{errors.password.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-1">
-            <Label>Role</Label>
-            <Controller
-              name="role"
-              control={control}
-              render={({ field }) => (
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={(field.value as string) ?? 'patient'}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="patient">Patient</SelectItem>
-                    <SelectItem value="doctor">Doctor</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-            />
-          </div>
-        </>
+        <div className="space-y-1">
+          <Label htmlFor="password">Password</Label>
+          <Input id="password" type="password" {...register('password')} />
+          {'password' in errors && errors.password && (
+            <p className="text-xs text-destructive">{errors.password.message}</p>
+          )}
+        </div>
       )}
+
+      <div className="space-y-1">
+        <Label>Role</Label>
+        <Controller
+          name="role"
+          control={control}
+          render={({ field }) => (
+            <Select
+              onValueChange={field.onChange}
+              value={(field.value as string) ?? 'patient'}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="patient">Patient</SelectItem>
+                <SelectItem value="doctor">Doctor</SelectItem>
+                <SelectItem value="admin">Admin</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
+        />
+      </div>
 
       <div className="space-y-1">
         <Label htmlFor="phone">Phone</Label>

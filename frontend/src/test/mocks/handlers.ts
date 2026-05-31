@@ -187,6 +187,11 @@ export const handlers = [
     });
   }),
 
+  http.patch(`${API_BASE_URL}/users/:id`, async ({ params, request }) => {
+    const body = await request.json() as Record<string, unknown>;
+    return HttpResponse.json({ id: params.id, code: 1, phone: null, createdAt: '2026-01-01T00:00:00Z', deletedAt: null, role: 'patient', ...body });
+  }),
+
   http.patch(`${API_BASE_URL}/users/patients/:id`, async ({ params, request }) => {
     const body = await request.json() as Record<string, unknown>;
     return HttpResponse.json({ id: params.id, code: 1, role: 'patient', createdAt: '2026-01-01T00:00:00Z', deletedAt: null, ...body });

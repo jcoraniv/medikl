@@ -8,6 +8,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { CreateUserByAdminDto } from './dto/create-user-by-admin.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -60,6 +61,18 @@ export class UsersService {
       take: limit,
     });
     return paginate(data, total, page, limit);
+  }
+
+  async updateUser(id: string, dto: UpdateUserDto): Promise<User> {
+    const user = await this.userRepo.findOne({ where: { id } });
+    if (!user) throw new NotFoundException(`User ${id} not found`);
+    Object.assign(user, dto);
+    try {
+      return await this.userRepo.save(user);
+    } catch (err: any) {
+      if (err.code === '23505') throw new ConflictException('Email already in use');
+      throw err;
+    }
   }
 
   async createPatient(dto: CreatePatientDto): Promise<User> {

@@ -16,8 +16,14 @@ import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/authStore';
 
 const navItems = [
-  { to: '/dashboard',  label: 'Dashboard',   icon: LayoutDashboard },
-  { to: '/users', label: 'Users', labelByRole: { doctor: 'Patients' }, icon: Users, roles: ['admin', 'doctor'] },
+  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  {
+    to: '/users',
+    label: 'Users',
+    labelByRole: { doctor: 'Patients' },
+    icon: Users,
+    roles: ['admin', 'doctor'],
+  },
   { to: '/appointments', label: 'Appointments', icon: Calendar },
   {
     to: '/study-types',
@@ -46,7 +52,7 @@ function Sidebar({ onClose, user, onLogout, closeable }: SidebarProps) {
   return (
     <aside className="flex h-full w-60 flex-col border-r bg-card">
       <div className="flex h-16 items-center justify-between border-b px-6">
-        <span className="text-lg font-semibold tracking-tight">medikt</span>
+        <span className="text-lg font-semibold tracking-tight">medikl</span>
         {closeable && (
           <button
             onClick={onClose}
@@ -77,7 +83,9 @@ function Sidebar({ onClose, user, onLogout, closeable }: SidebarProps) {
               }
             >
               <Icon size={16} />
-              {(labelByRole as Record<string, string> | undefined)?.[user?.role ?? ''] ?? label}
+              {(labelByRole as Record<string, string> | undefined)?.[
+                user?.role ?? ''
+              ] ?? label}
             </NavLink>
           ))}
       </nav>

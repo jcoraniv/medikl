@@ -45,8 +45,8 @@ export const usersService = {
   create: (data: CreateUserPayload): Promise<AppUser> =>
     api.post<AppUser>('/users', data).then((r) => r.data),
 
-  update: (id: string, data: Pick<AppUser, 'fullName' | 'email' | 'phone'>): Promise<AppUser> =>
-    api.patch<AppUser>(`/users/patients/${id}`, data).then((r) => r.data),
+  update: (id: string, data: Partial<Pick<AppUser, 'fullName' | 'email' | 'phone' | 'role'>>): Promise<AppUser> =>
+    api.patch<AppUser>(`/users/${id}`, data).then((r) => r.data),
 
   softDelete: (id: string): Promise<void> =>
     api.delete(`/users/patients/${id}`).then((r) => r.data),

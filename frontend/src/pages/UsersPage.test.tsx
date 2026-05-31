@@ -80,6 +80,16 @@ describe('UsersPage', () => {
       expect(screen.getByRole('combobox')).toBeInTheDocument();
     });
 
+    it('opens edit dialog with Role selector pre-filled', async () => {
+      const user = userEvent.setup();
+      renderPage();
+      await screen.findByText('Dra. García');
+      const pencilButtons = document.querySelectorAll('button svg.lucide-pencil');
+      await user.click(pencilButtons[1].closest('button')!);
+      expect(await screen.findByRole('heading', { name: /edit user/i })).toBeInTheDocument();
+      expect(screen.getByRole('combobox')).toBeInTheDocument();
+    });
+
     it('submits create form and closes dialog', async () => {
       const user = userEvent.setup();
       renderPage();

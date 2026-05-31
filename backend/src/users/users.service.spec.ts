@@ -197,6 +197,35 @@ describe('UsersService — patient management', () => {
     });
   });
 
+  // ─── updateUser ───────────────────────────────────────────────────────────────
+
+  describe('updateUser', () => {
+    it('updates role and other fields for any user', async () => {
+      const doctorUser = { ...mockPatient, role: UserRole.DOCTOR };
+      const updated = { ...doctorUser, role: UserRole.ADMIN };
+      userRepo.findOne.mockResolvedValue({ ...doctorUser });
+      userRepo.save.mockResolvedValue(updated);
+
+      const result = await service.updateUser(PATIENT_ID, { role: UserRole.ADMIN });
+
+      expect(result.role).toBe(UserRole.ADMIN);
+      expect(userRepo.findOne).toHaveBeenCalledWith({ where: { id: PATIENT_ID } });
+    });
+
+    it('throws NotFoundException when user does not exist', async () => {
+      userRepo.findOne.mockResolvedValue(null);
+
+      await expect(service.updateUser('unknown', { fullName: 'X' })).rejects.toThrow(NotFoundException);
+    });
+
+    it('throws ConflictException when updating to an already used email', async () => {
+      userRepo.findOne.mockResolvedValue({ ...mockPatient });
+      userRepo.save.mockRejectedValue({ code: '23505' });
+
+      await expect(service.updateUser(PATIENT_ID, { email: 'dup@test.com' })).rejects.toThrow(ConflictException);
+    });
+  });
+
   // ─── updatePatient ────────────────────────────────────────────────────────────
 
   describe('updatePatient', () => {
