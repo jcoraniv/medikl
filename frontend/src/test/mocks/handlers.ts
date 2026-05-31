@@ -1,4 +1,5 @@
 import { http, HttpResponse } from 'msw';
+import { API_BASE_URL } from '@/lib/config';
 
 const mockUser = {
   id: 'uuid-123',
@@ -6,6 +7,25 @@ const mockUser = {
   fullName: 'Test User',
   role: 'patient',
 };
+
+export const mockAppointments = [
+  {
+    id: 'appt-uuid-1',
+    patientId: 'patient-uuid',
+    patient: { id: 'patient-uuid', email: 'patient@test.com', fullName: 'Carlos López', role: 'patient' },
+    doctorId: 'doctor-uuid',
+    doctor: { id: 'doctor-uuid', email: 'doctor@test.com', fullName: 'Dra. García', role: 'doctor' },
+    studyTypeId: null,
+    studyType: null,
+    scheduledDate: '2026-06-01T10:00:00Z',
+    duration: 30,
+    reason: 'Routine check',
+    notes: null,
+    status: 'scheduled',
+    createdAt: '2026-05-30T00:00:00Z',
+    updatedAt: '2026-05-30T00:00:00Z',
+  },
+];
 
 export const mockStats = {
   totalPatients: 5,
@@ -15,7 +35,7 @@ export const mockStats = {
 };
 
 export const handlers = [
-  http.post('http://localhost:3000/api/auth/login', async ({ request }) => {
+  http.post(`${API_BASE_URL}/auth/login`, async ({ request }) => {
     const body = await request.json() as { email: string; password: string };
 
     if (body.email === 'test@example.com' && body.password === 'password123') {
@@ -25,7 +45,35 @@ export const handlers = [
     return HttpResponse.json({ message: 'Invalid credentials' }, { status: 401 });
   }),
 
-  http.get('http://localhost:3000/api/dashboard/stats', () => {
+  http.get(`${API_BASE_URL}/dashboard/stats`, () => {
     return HttpResponse.json(mockStats);
+  }),
+
+  http.get(`${API_BASE_URL}/appointments`, () => {
+    return HttpResponse.json(mockAppointments);
+  }),
+
+  http.post(`${API_BASE_URL}/appointments`, async ({ request }) => {
+    const body = await request.json() as Record<string, unknown>;
+    return HttpResponse.json({ ...mockAppointments[0], ...body, id: 'new-uuid' }, { status: 201 });
+  }),
+
+  http.patch(`${API_BASE_URL}/appointments/:id/cancel`, ({ params }) => {
+    return HttpResponse.json({ ...mockAppointments[0], id: params.id, status: 'cancelled' });
+  }),
+
+  http.patch(`${API_BASE_URL}/appointments/:id/complete`, ({ params }) => {
+    return HttpResponse.json({ ...mockAppointments[0], id: params.id, status: 'completed' });
+  }),
+
+  http.get(`${API_BASE_URL}/users`, () => {
+    return HttpResponse.json([mockUser]);
+  }),
+
+  http.get(`${API_BASE_URL}/study-types`, () => {
+    return HttpResponse.json([
+      { id: 'st-uuid-1', name: 'Ecografía abdominal', duration: 30 },
+      { id: 'st-uuid-2', name: 'Ecografía obstétrica', duration: 45 },
+    ]);
   }),
 ];

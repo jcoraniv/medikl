@@ -2,7 +2,9 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { AppointmentsModule } from './appointments/appointments.module';
 import { AuthModule } from './auth/auth.module';
+import { StudyTypesModule } from './study-types/study-types.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { UsersModule } from './users/users.module';
 
@@ -25,8 +27,10 @@ import { UsersModule } from './users/users.module';
         logging: config.get('NODE_ENV') === 'development',
       }),
     }),
+    AppointmentsModule,
     AuthModule,
     DashboardModule,
+    StudyTypesModule,
     UsersModule,
   ],
 })

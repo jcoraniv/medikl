@@ -3,6 +3,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { LoginPage } from '@/pages/LoginPage';
 import { DashboardPage } from '@/pages/DashboardPage';
+import { AppointmentsPage } from '@/pages/AppointmentsPage';
 
 function App() {
   return (
@@ -11,6 +12,7 @@ function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/appointments" element={<AppointmentsPage />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Route>

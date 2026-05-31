@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from './entities/user.entity';
+import { User, UserRole } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import * as bcrypt from 'bcrypt';
 
@@ -24,5 +24,9 @@ export class UsersService {
 
   async findById(id: string): Promise<User | null> {
     return this.userRepo.findOne({ where: { id } });
+  }
+
+  findByRole(role: UserRole): Promise<User[]> {
+    return this.userRepo.find({ where: { role } });
   }
 }
