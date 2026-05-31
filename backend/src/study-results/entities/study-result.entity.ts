@@ -3,11 +3,6 @@ import { BaseEntity } from '../../common/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
 import { Appointment } from '../../appointments/entities/appointment.entity';
 
-export enum StudyResultStatus {
-  PENDING = 'pending',
-  REVIEWED = 'reviewed',
-}
-
 @Entity('study_results')
 export class StudyResult extends BaseEntity {
   @ManyToOne(() => Appointment, { eager: false })
@@ -33,10 +28,4 @@ export class StudyResult extends BaseEntity {
 
   @Column({ type: 'text', nullable: true })
   conclusion: string | null;
-
-  @Column({ type: 'enum', enum: StudyResultStatus, default: StudyResultStatus.PENDING })
-  status: StudyResultStatus;
-
-  @Column({ type: 'timestamp', nullable: true })
-  reviewedAt: Date | null;
 }

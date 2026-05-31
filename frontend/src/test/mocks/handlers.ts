@@ -32,6 +32,25 @@ export const mockAppointments = [
   },
 ];
 
+export const mockStudyResults = [
+  {
+    id: 'result-uuid-1',
+    appointmentId: 'appt-uuid-1',
+    appointment: {
+      ...mockAppointments[0],
+      studyType: mockStudyTypes[0],
+    },
+    patientId: 'patient-uuid',
+    patient: { id: 'patient-uuid', email: 'patient@test.com', fullName: 'Carlos López', role: 'patient' },
+    doctorId: 'doctor-uuid',
+    doctor: { id: 'doctor-uuid', email: 'doctor@test.com', fullName: 'Dra. García', role: 'doctor' },
+    findings: 'Hallazgos dentro de parámetros normales para la edad del paciente',
+    conclusion: null,
+    createdAt: '2026-05-30T00:00:00Z',
+    updatedAt: '2026-05-30T00:00:00Z',
+  },
+];
+
 export const mockStats = {
   totalPatients: 5,
   totalDoctors: 2,
@@ -92,4 +111,19 @@ export const handlers = [
   http.delete(`${API_BASE_URL}/study-types/:id`, () => {
     return new HttpResponse(null, { status: 204 });
   }),
+
+  http.get(`${API_BASE_URL}/study-results`, () => {
+    return HttpResponse.json(mockStudyResults);
+  }),
+
+  http.post(`${API_BASE_URL}/study-results`, async ({ request }) => {
+    const body = await request.json() as Record<string, unknown>;
+    return HttpResponse.json({ ...mockStudyResults[0], ...body, id: 'new-result-uuid' }, { status: 201 });
+  }),
+
+  http.patch(`${API_BASE_URL}/study-results/:id`, async ({ params, request }) => {
+    const body = await request.json() as Record<string, unknown>;
+    return HttpResponse.json({ ...mockStudyResults[0], id: params.id, ...body });
+  }),
+
 ];

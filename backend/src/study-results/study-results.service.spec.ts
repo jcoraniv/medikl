@@ -3,7 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Appointment, AppointmentStatus } from '../appointments/entities/appointment.entity';
 import { User } from '../users/entities/user.entity';
-import { StudyResult, StudyResultStatus } from './entities/study-result.entity';
+import { StudyResult } from './entities/study-result.entity';
 import { StudyResultsService } from './study-results.service';
 
 const APPOINTMENT_ID = 'appt-uuid-1';
@@ -26,8 +26,6 @@ const mockResult: StudyResult = {
   doctorId: DOCTOR_ID,
   findings: 'Hallazgos dentro de parámetros normales',
   conclusion: null,
-  status: StudyResultStatus.PENDING,
-  reviewedAt: null,
   appointment: mockAppointment as Appointment,
   patient: {} as User,
   doctor: {} as User,
@@ -191,8 +189,7 @@ describe('StudyResultsService', () => {
 
   describe('update', () => {
     it('updates findings and returns the modified result', async () => {
-      const pending = { ...mockResult, status: StudyResultStatus.PENDING };
-      resultRepo.findOne.mockResolvedValue(pending);
+      resultRepo.findOne.mockResolvedValue({ ...mockResult });
       resultRepo.save.mockImplementation((r) => Promise.resolve(r));
 
       const result = await service.update(RESULT_ID, { findings: 'Nuevos hallazgos actualizados' });
@@ -200,32 +197,11 @@ describe('StudyResultsService', () => {
       expect(result.findings).toBe('Nuevos hallazgos actualizados');
     });
 
-    it('throws BadRequestException when result is already REVIEWED', async () => {
-      resultRepo.findOne.mockResolvedValue({ ...mockResult, status: StudyResultStatus.REVIEWED });
+    it('throws NotFoundException when result does not exist', async () => {
+      resultRepo.findOne.mockResolvedValue(null);
 
-      await expect(service.update(RESULT_ID, { findings: 'Intento de edición' }))
-        .rejects.toThrow(BadRequestException);
-    });
-  });
-
-  // ─── review ──────────────────────────────────────────────────────────────────
-
-  describe('review', () => {
-    it('sets status to REVIEWED and stamps reviewedAt', async () => {
-      const pending = { ...mockResult, status: StudyResultStatus.PENDING, reviewedAt: null };
-      resultRepo.findOne.mockResolvedValue(pending);
-      resultRepo.save.mockImplementation((r) => Promise.resolve(r));
-
-      const result = await service.review(RESULT_ID);
-
-      expect(result.status).toBe(StudyResultStatus.REVIEWED);
-      expect(result.reviewedAt).toBeInstanceOf(Date);
-    });
-
-    it('throws BadRequestException when result is already REVIEWED', async () => {
-      resultRepo.findOne.mockResolvedValue({ ...mockResult, status: StudyResultStatus.REVIEWED });
-
-      await expect(service.review(RESULT_ID)).rejects.toThrow(BadRequestException);
+      await expect(service.update('nonexistent', { findings: 'Algo' }))
+        .rejects.toThrow(NotFoundException);
     });
   });
 });

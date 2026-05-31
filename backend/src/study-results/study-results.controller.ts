@@ -50,11 +50,4 @@ export class StudyResultsController {
   update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateStudyResultDto) {
     return this.studyResultsService.update(id, dto);
   }
-
-  @ApiOperation({ summary: 'Mark result as reviewed' })
-  @Roles(UserRole.ADMIN, UserRole.DOCTOR)
-  @Patch(':id/review')
-  review(@Param('id', ParseUUIDPipe) id: string) {
-    return this.studyResultsService.review(id);
-  }
 }

@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { appointmentsService } from '@/services/appointmentsService';
+import { useAuthStore } from '@/store/authStore';
 import type { Appointment, AppointmentStatus } from '@/types/appointment';
 import { AppointmentForm } from '@/components/appointments/AppointmentForm';
+import { StudyResultForm } from '@/components/appointments/StudyResultForm';
 
 const STATUS_STYLES: Record<AppointmentStatus, string> = {
   scheduled: 'bg-blue-100 text-blue-800',
@@ -16,13 +18,19 @@ const STATUS_STYLES: Record<AppointmentStatus, string> = {
 
 function AppointmentRow({
   appointment,
+  canWrite,
   onCancel,
   onComplete,
+  onEmitResult,
 }: {
   appointment: Appointment;
+  canWrite: boolean;
   onCancel: (id: string) => void;
   onComplete: (id: string) => void;
+  onEmitResult: (appointment: Appointment) => void;
 }) {
+  const canEmit = canWrite && (appointment.status === 'scheduled' || appointment.status === 'completed');
+
   return (
     <tr className="border-b last:border-0">
       <td className="py-3 pr-4 text-sm">{appointment.patient?.fullName ?? '—'}</td>
@@ -35,23 +43,41 @@ function AppointmentRow({
         <Badge className={STATUS_STYLES[appointment.status]}>{appointment.status}</Badge>
       </td>
       <td className="py-3 text-right">
-        {appointment.status === 'scheduled' && (
-          <div className="flex justify-end gap-2">
-            <Button size="sm" variant="outline" onClick={() => onComplete(appointment.id)}>
-              Complete
+        <div className="flex justify-end gap-2">
+          {appointment.status === 'scheduled' && (
+            <>
+              <Button size="sm" variant="outline" onClick={() => onComplete(appointment.id)}>
+                Complete
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => onCancel(appointment.id)}>
+                Cancel
+              </Button>
+            </>
+          )}
+          {canEmit && (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => onEmitResult(appointment)}
+              className="gap-1"
+            >
+              <FileText size={13} />
+              Emit result
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => onCancel(appointment.id)}>
-              Cancel
-            </Button>
-          </div>
-        )}
+          )}
+        </div>
       </td>
     </tr>
   );
 }
 
 export function AppointmentsPage() {
-  const [open, setOpen] = useState(false);
+  const user = useAuthStore((s) => s.user);
+  const canWrite = user?.role === 'admin' || user?.role === 'doctor';
+
+  const [newOpen, setNewOpen] = useState(false);
+  const [resultAppointment, setResultAppointment] = useState<Appointment | null>(null);
+
   const queryClient = useQueryClient();
 
   const { data: appointments = [], isLoading } = useQuery({
@@ -76,7 +102,7 @@ export function AppointmentsPage() {
           <h1 className="text-2xl font-bold">Appointments</h1>
           <p className="text-muted-foreground">Manage medical appointments</p>
         </div>
-        <Button onClick={() => setOpen(true)} className="gap-2">
+        <Button onClick={() => setNewOpen(true)} className="gap-2">
           <Plus size={16} />
           New appointment
         </Button>
@@ -105,8 +131,10 @@ export function AppointmentsPage() {
                 <AppointmentRow
                   key={a.id}
                   appointment={a}
+                  canWrite={canWrite}
                   onCancel={(id) => cancelMutation.mutate(id)}
                   onComplete={(id) => completeMutation.mutate(id)}
+                  onEmitResult={setResultAppointment}
                 />
               ))}
             </tbody>
@@ -114,13 +142,38 @@ export function AppointmentsPage() {
         </div>
       )}
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      {/* New appointment dialog */}
+      <Dialog open={newOpen} onOpenChange={setNewOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>New appointment</DialogTitle>
             <DialogDescription>Fill in the details to schedule a new appointment.</DialogDescription>
           </DialogHeader>
-          <AppointmentForm onSuccess={() => { setOpen(false); queryClient.invalidateQueries({ queryKey: ['appointments'] }); }} />
+          <AppointmentForm
+            onSuccess={() => {
+              setNewOpen(false);
+              queryClient.invalidateQueries({ queryKey: ['appointments'] });
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Emit result dialog */}
+      <Dialog open={resultAppointment !== null} onOpenChange={(open) => !open && setResultAppointment(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Emit study result</DialogTitle>
+            <DialogDescription>
+              Enter the clinical findings for this appointment.
+            </DialogDescription>
+          </DialogHeader>
+          {resultAppointment && (
+            <StudyResultForm
+              appointment={resultAppointment}
+              onSuccess={() => setResultAppointment(null)}
+              onCancel={() => setResultAppointment(null)}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>

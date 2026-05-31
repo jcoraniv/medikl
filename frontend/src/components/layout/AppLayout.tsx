@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Calendar, FlaskConical, Search, LogOut } from 'lucide-react';
+import { LayoutDashboard, Calendar, FlaskConical, FileText, Search, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/authStore';
 
@@ -7,6 +7,7 @@ const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/appointments', label: 'Appointments', icon: Calendar },
   { to: '/study-types', label: 'Study Types', icon: FlaskConical },
+  { to: '/study-results', label: 'Study Results', icon: FileText },
   { to: '/search', label: 'Semantic Search', icon: Search },
 ];
 

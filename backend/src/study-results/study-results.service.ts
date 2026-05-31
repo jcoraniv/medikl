@@ -5,7 +5,7 @@ import { Appointment, AppointmentStatus } from '../appointments/entities/appoint
 import { User } from '../users/entities/user.entity';
 import { CreateStudyResultDto } from './dto/create-study-result.dto';
 import { UpdateStudyResultDto } from './dto/update-study-result.dto';
-import { StudyResult, StudyResultStatus } from './entities/study-result.entity';
+import { StudyResult } from './entities/study-result.entity';
 
 @Injectable()
 export class StudyResultsService {
@@ -38,7 +38,6 @@ export class StudyResultsService {
         doctorId: appointment.doctorId,
         findings: dto.findings,
         conclusion: dto.conclusion ?? null,
-        status: StudyResultStatus.PENDING,
       }),
     );
 
@@ -80,20 +79,7 @@ export class StudyResultsService {
 
   async update(id: string, dto: UpdateStudyResultDto): Promise<StudyResult> {
     const result = await this.findOne(id);
-    if (result.status === StudyResultStatus.REVIEWED) {
-      throw new BadRequestException('A reviewed result cannot be modified');
-    }
     Object.assign(result, dto);
-    return this.resultRepo.save(result);
-  }
-
-  async review(id: string): Promise<StudyResult> {
-    const result = await this.findOne(id);
-    if (result.status === StudyResultStatus.REVIEWED) {
-      throw new BadRequestException('Result is already reviewed');
-    }
-    result.status = StudyResultStatus.REVIEWED;
-    result.reviewedAt = new Date();
     return this.resultRepo.save(result);
   }
 }
