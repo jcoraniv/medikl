@@ -1,5 +1,5 @@
 import { Column, Entity, ManyToOne } from 'typeorm';
-import { BaseEntity } from '../../common/entities/base.entity';
+import { CodedEntity } from '../../common/entities/coded.entity';
 import { User } from '../../users/entities/user.entity';
 import { StudyType } from '../../study-types/entities/study-type.entity';
 
@@ -10,7 +10,7 @@ export enum AppointmentStatus {
 }
 
 @Entity('appointments')
-export class Appointment extends BaseEntity {
+export class Appointment extends CodedEntity {
   @ManyToOne(() => User)
   patient: User;
 

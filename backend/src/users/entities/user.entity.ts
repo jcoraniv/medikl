@@ -1,6 +1,6 @@
 import { Exclude } from 'class-transformer';
 import { Column, Entity } from 'typeorm';
-import { BaseEntity } from '../../common/entities/base.entity';
+import { CodedEntity } from '../../common/entities/coded.entity';
 
 export enum UserRole {
   ADMIN = 'admin',
@@ -9,7 +9,7 @@ export enum UserRole {
 }
 
 @Entity('users')
-export class User extends BaseEntity {
+export class User extends CodedEntity {
   @Column({ unique: true })
   email: string;
 

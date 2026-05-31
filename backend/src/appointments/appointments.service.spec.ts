@@ -7,6 +7,7 @@ import { Appointment, AppointmentStatus } from './entities/appointment.entity';
 
 const mockPatient: User = {
   id: 'patient-uuid',
+  code: 1,
   email: 'patient@test.com',
   fullName: 'Carlos López',
   passwordHash: 'hash',
@@ -17,6 +18,7 @@ const mockPatient: User = {
 
 const mockDoctor: User = {
   id: 'doctor-uuid',
+  code: 2,
   email: 'doctor@test.com',
   fullName: 'Dra. García',
   passwordHash: 'hash',
@@ -27,6 +29,7 @@ const mockDoctor: User = {
 
 const mockAppointment: Appointment = {
   id: 'appt-uuid',
+  code: 1,
   patientId: mockPatient.id,
   patient: mockPatient,
   doctorId: mockDoctor.id,

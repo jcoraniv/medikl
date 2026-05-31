@@ -13,6 +13,7 @@ const RESULT_ID = 'result-uuid-1';
 
 const mockAppointment: Partial<Appointment> = {
   id: APPOINTMENT_ID,
+  code: 1,
   patientId: PATIENT_ID,
   doctorId: DOCTOR_ID,
   status: AppointmentStatus.SCHEDULED,
@@ -27,8 +28,8 @@ const mockResult: StudyResult = {
   findings: 'Hallazgos dentro de parámetros normales',
   conclusion: null,
   appointment: mockAppointment as Appointment,
-  patient: {} as User,
-  doctor: {} as User,
+  patient: { code: 1 } as User,
+  doctor: { code: 2 } as User,
   createdAt: new Date(),
   updatedAt: new Date(),
 };
