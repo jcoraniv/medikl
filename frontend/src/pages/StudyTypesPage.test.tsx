@@ -5,9 +5,13 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { http, HttpResponse } from 'msw';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { server } from '@/test/mocks/server';
-import { mockStudyTypes } from '@/test/mocks/handlers';
 import { useAuthStore } from '@/store/authStore';
+import { API_BASE_URL } from '@/lib/config';
 import { StudyTypesPage } from './StudyTypesPage';
+
+// u1 = admin, u2 = doctor — matches createdById in mockStudyTypes handler
+const ADMIN_USER  = { id: 'u1', code: 99, email: 'admin@test.com',  fullName: 'Admin',       role: 'admin'   as const };
+const DOCTOR_USER = { id: 'u2', code: 2,  email: 'doctor@test.com', fullName: 'Dra. García', role: 'doctor'  as const };
 
 function renderPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -22,7 +26,7 @@ function renderPage() {
 
 describe('StudyTypesPage', () => {
   beforeEach(() => {
-    useAuthStore.setState({ token: 'mock-token', user: { id: 'u1', email: 'admin@test.com', fullName: 'Admin', role: 'admin' }, isAuthenticated: true });
+    useAuthStore.setState({ token: 'mock-token', user: ADMIN_USER, isAuthenticated: true });
   });
 
   it('renders the page heading', () => {
@@ -43,18 +47,30 @@ describe('StudyTypesPage', () => {
   });
 
   it('shows empty state when there are no study types', async () => {
-    server.use(http.get(`${(await import('@/lib/config')).API_BASE_URL}/study-types`, () => HttpResponse.json([])));
+    server.use(http.get(`${API_BASE_URL}/study-types`, () => HttpResponse.json([])));
     renderPage();
     expect(await screen.findByText(/no study types yet/i)).toBeInTheDocument();
   });
 
-  it('shows New study type button for admin users', async () => {
+  // ─── Create button visibility ─────────────────────────────────────────────
+
+  it('shows New study type button for admin', async () => {
     renderPage();
     expect(await screen.findByRole('button', { name: /new study type/i })).toBeInTheDocument();
   });
 
-  it('hides New study type button for non-admin users', async () => {
-    useAuthStore.setState({ token: 'mock-token', user: { id: 'u2', email: 'doctor@test.com', fullName: 'Doctor', role: 'doctor' }, isAuthenticated: true });
+  it('shows New study type button for doctor', async () => {
+    useAuthStore.setState({ token: 'mock-token', user: DOCTOR_USER, isAuthenticated: true });
+    renderPage();
+    expect(await screen.findByRole('button', { name: /new study type/i })).toBeInTheDocument();
+  });
+
+  it('hides New study type button for patient role', async () => {
+    useAuthStore.setState({
+      token: 'mock-token',
+      user: { id: 'u3', code: 3, email: 'patient@test.com', fullName: 'Patient', role: 'patient' },
+      isAuthenticated: true,
+    });
     renderPage();
     await screen.findByText('Ecografía abdominal');
     expect(screen.queryByRole('button', { name: /new study type/i })).not.toBeInTheDocument();
@@ -67,20 +83,47 @@ describe('StudyTypesPage', () => {
     expect(screen.getByRole('heading', { name: /new study type/i })).toBeInTheDocument();
   });
 
-  it('shows edit and delete buttons for admin', async () => {
-    renderPage();
-    await waitFor(() => {
-      expect(screen.getAllByRole('button').some(b => b.querySelector('svg'))).toBe(true);
-    });
-    expect(await screen.findByText('Ecografía abdominal')).toBeInTheDocument();
-  });
+  // ─── Edit / Delete button visibility ─────────────────────────────────────
 
-  it('does not show edit/delete buttons for non-admin', async () => {
-    useAuthStore.setState({ token: 'mock-token', user: { id: 'u2', email: 'doctor@test.com', fullName: 'Doctor', role: 'doctor' }, isAuthenticated: true });
+  it('admin sees edit and delete buttons for all study types', async () => {
     renderPage();
     await screen.findByText('Ecografía abdominal');
-    const studyTypeInMock = mockStudyTypes[0];
-    expect(screen.queryByText(studyTypeInMock.name)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /new study type/i })).not.toBeInTheDocument();
+    // 2 study types × 2 buttons (edit + delete) = 4 icon buttons
+    const iconButtons = screen.getAllByRole('button').filter((b) => b.querySelector('svg'));
+    // at least the New button + 4 action buttons
+    expect(iconButtons.length).toBeGreaterThanOrEqual(5);
+  });
+
+  it('doctor sees delete only for study types they created', async () => {
+    // mockStudyTypes: st-uuid-1 → createdById:'u1' (admin), st-uuid-2 → createdById:'u2' (doctor)
+    useAuthStore.setState({ token: 'mock-token', user: DOCTOR_USER, isAuthenticated: true });
+    renderPage();
+    await screen.findByText('Ecografía abdominal');
+    // Edit button (Pencil) must not appear at all for doctors
+    expect(screen.queryByTestId?.('edit-btn')).not.toBeInTheDocument();
+    // Only 1 delete button — for the study type owned by this doctor
+    await waitFor(() => {
+      const deleteButtons = screen.getAllByRole('button').filter((b) =>
+        b.querySelector('svg') && !b.textContent?.includes('New'),
+      );
+      expect(deleteButtons).toHaveLength(1);
+    });
+  });
+
+  it('doctor does not see delete button for study types they do not own', async () => {
+    // Only expose the study type owned by the admin
+    server.use(
+      http.get(`${API_BASE_URL}/study-types`, () =>
+        HttpResponse.json([{ id: 'st-uuid-1', name: 'Ecografía abdominal', description: null, duration: 30, address: null, createdById: 'u1', deletedAt: null }]),
+      ),
+    );
+    useAuthStore.setState({ token: 'mock-token', user: DOCTOR_USER, isAuthenticated: true });
+    renderPage();
+    await screen.findByText('Ecografía abdominal');
+    // No action buttons visible (other than "New study type")
+    const actionButtons = screen.getAllByRole('button').filter((b) =>
+      b.querySelector('svg') && !b.textContent?.includes('New'),
+    );
+    expect(actionButtons).toHaveLength(0);
   });
 });

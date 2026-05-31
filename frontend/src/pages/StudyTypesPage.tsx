@@ -135,6 +135,8 @@ function StudyTypeForm({
 export function StudyTypesPage() {
   const user = useAuthStore((s) => s.user);
   const isAdmin = user?.role === 'admin';
+  const isDoctor = user?.role === 'doctor';
+  const canCreate = isAdmin || isDoctor;
   const queryClient = useQueryClient();
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -151,6 +153,12 @@ export function StudyTypesPage() {
       queryClient.invalidateQueries({ queryKey: ['study-types'] }),
   });
 
+  function canDelete(st: StudyType): boolean {
+    if (isAdmin) return true;
+    if (isDoctor) return st.createdById === user?.id;
+    return false;
+  }
+
   function openCreate() {
     setEditing(undefined);
     setDialogOpen(true);
@@ -159,6 +167,8 @@ export function StudyTypesPage() {
     setEditing(st);
     setDialogOpen(true);
   }
+
+  const showActionsColumn = isAdmin || isDoctor;
 
   return (
     <div className="p-8">
@@ -169,7 +179,7 @@ export function StudyTypesPage() {
             Catalog of available medical studies
           </p>
         </div>
-        {isAdmin && (
+        {canCreate && (
           <Button onClick={openCreate} className="gap-2">
             <Plus size={16} />
             New study type
@@ -195,7 +205,7 @@ export function StudyTypesPage() {
                   'Description',
                   'Address',
                   'Duration',
-                  ...(isAdmin ? [''] : []),
+                  ...(showActionsColumn ? [''] : []),
                 ].map((h) => (
                   <th
                     key={h}
@@ -217,23 +227,27 @@ export function StudyTypesPage() {
                     {st.address ?? '—'}
                   </td>
                   <td className="py-3 pr-4 text-sm">{st.duration} min</td>
-                  {isAdmin && (
+                  {showActionsColumn && (
                     <td className="py-3 text-right">
                       <div className="flex justify-end gap-1">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => openEdit(st)}
-                        >
-                          <Pencil size={14} />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => deleteMutation.mutate(st.id)}
-                        >
-                          <Trash2 size={14} />
-                        </Button>
+                        {isAdmin && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => openEdit(st)}
+                          >
+                            <Pencil size={14} />
+                          </Button>
+                        )}
+                        {canDelete(st) && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => deleteMutation.mutate(st.id)}
+                          >
+                            <Trash2 size={14} />
+                          </Button>
+                        )}
                       </div>
                     </td>
                   )}

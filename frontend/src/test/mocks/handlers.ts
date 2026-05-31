@@ -9,9 +9,10 @@ const mockUser = {
   role: 'patient',
 };
 
+// u1 = admin, u2 = doctor (matches ids used in test auth store setup)
 export const mockStudyTypes = [
-  { id: 'st-uuid-1', name: 'Ecografía abdominal', description: 'Examen abdominal', duration: 30, address: 'Clínica del Valle, Av. Simón López Nro. 512', deletedAt: null },
-  { id: 'st-uuid-2', name: 'Ecografía obstétrica', description: null, duration: 45, address: null, deletedAt: null },
+  { id: 'st-uuid-1', name: 'Ecografía abdominal', description: 'Examen abdominal', duration: 30, address: 'Clínica del Valle, Av. Simón López Nro. 512', createdById: 'u1', deletedAt: null },
+  { id: 'st-uuid-2', name: 'Ecografía obstétrica', description: null, duration: 45, address: null, createdById: 'u2', deletedAt: null },
 ];
 
 export const mockAppointments = [
@@ -92,7 +93,14 @@ export const handlers = [
     return HttpResponse.json({ ...mockAppointments[0], id: params.id, status: 'completed' });
   }),
 
-  http.get(`${API_BASE_URL}/users`, () => {
+  http.get(`${API_BASE_URL}/users`, ({ request }) => {
+    const role = new URL(request.url).searchParams.get('role');
+    if (role === 'patient') {
+      return HttpResponse.json([{ id: 'patient-uuid', code: 1, email: 'patient@test.com', fullName: 'Carlos López', role: 'patient' }]);
+    }
+    if (role === 'doctor') {
+      return HttpResponse.json([{ id: 'doctor-uuid', code: 2, email: 'doctor@test.com', fullName: 'Dra. García', role: 'doctor' }]);
+    }
     return HttpResponse.json([mockUser]);
   }),
 

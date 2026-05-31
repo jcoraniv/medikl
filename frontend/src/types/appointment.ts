@@ -8,6 +8,7 @@ export interface StudyType {
   description: string | null;
   duration: number;
   address: string | null;
+  createdById: string | null;
   deletedAt: string | null;
 }
 
@@ -31,7 +32,7 @@ export interface Appointment {
 
 export interface CreateAppointmentDto {
   patientId: string;
-  doctorId: string;
+  doctorId?: string;
   studyTypeId?: string;
   scheduledDate: string;
   duration: number;

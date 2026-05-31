@@ -8,8 +8,9 @@ import { Label } from '@/components/ui/label';
 import { appointmentsService } from '@/services/appointmentsService';
 import { studyTypesService } from '@/services/studyTypesService';
 import { usersService } from '@/services/usersService';
+import { useAuthStore } from '@/store/authStore';
 
-const schema = z.object({
+const adminSchema = z.object({
   patientId: z.string().min(1, 'Required'),
   doctorId: z.string().min(1, 'Required'),
   studyTypeId: z.string().optional(),
@@ -19,13 +20,27 @@ const schema = z.object({
   notes: z.string().optional(),
 });
 
-type FormValues = z.infer<typeof schema>;
+const doctorSchema = z.object({
+  patientId: z.string().min(1, 'Required'),
+  studyTypeId: z.string().optional(),
+  scheduledDate: z.string().min(1, 'Required'),
+  duration: z.coerce.number().min(5, 'Min 5 minutes'),
+  reason: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+type AdminFormValues = z.infer<typeof adminSchema>;
+type DoctorFormValues = z.infer<typeof doctorSchema>;
+type FormValues = AdminFormValues | DoctorFormValues;
 
 interface Props {
   onSuccess: () => void;
 }
 
 export function AppointmentForm({ onSuccess }: Props) {
+  const user = useAuthStore((s) => s.user);
+  const isDoctor = user?.role === 'doctor';
+
   const { data: patients = [] } = useQuery({
     queryKey: ['users', 'patients'],
     queryFn: () => usersService.getByRole('patient'),
@@ -34,6 +49,7 @@ export function AppointmentForm({ onSuccess }: Props) {
   const { data: doctors = [] } = useQuery({
     queryKey: ['users', 'doctors'],
     queryFn: () => usersService.getByRole('doctor'),
+    enabled: !isDoctor,
   });
 
   const { data: studyTypes = [] } = useQuery({
@@ -46,7 +62,9 @@ export function AppointmentForm({ onSuccess }: Props) {
     handleSubmit,
     setError,
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>({ resolver: zodResolver(schema) });
+  } = useForm<FormValues>({
+    resolver: zodResolver(isDoctor ? doctorSchema : adminSchema),
+  });
 
   const mutation = useMutation({
     mutationFn: appointmentsService.create,
@@ -71,20 +89,24 @@ export function AppointmentForm({ onSuccess }: Props) {
         {errors.patientId && <p className="text-xs text-destructive">{errors.patientId.message}</p>}
       </div>
 
-      <div className="space-y-1">
-        <Label htmlFor="doctorId">Doctor</Label>
-        <select
-          id="doctorId"
-          {...register('doctorId')}
-          className="w-full rounded-md border px-3 py-2 text-sm"
-        >
-          <option value="">Select doctor…</option>
-          {doctors.map((d) => (
-            <option key={d.id} value={d.id}>{d.fullName}</option>
-          ))}
-        </select>
-        {errors.doctorId && <p className="text-xs text-destructive">{errors.doctorId.message}</p>}
-      </div>
+      {!isDoctor && (
+        <div className="space-y-1">
+          <Label htmlFor="doctorId">Doctor</Label>
+          <select
+            id="doctorId"
+            {...(register as (name: keyof AdminFormValues) => object)('doctorId')}
+            className="w-full rounded-md border px-3 py-2 text-sm"
+          >
+            <option value="">Select doctor…</option>
+            {doctors.map((d) => (
+              <option key={d.id} value={d.id}>{d.fullName}</option>
+            ))}
+          </select>
+          {'doctorId' in errors && errors.doctorId && (
+            <p className="text-xs text-destructive">{errors.doctorId.message}</p>
+          )}
+        </div>
+      )}
 
       <div className="space-y-1">
         <Label htmlFor="studyTypeId">Study type</Label>

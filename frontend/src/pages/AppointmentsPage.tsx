@@ -19,12 +19,14 @@ const STATUS_STYLES: Record<AppointmentStatus, string> = {
 function AppointmentRow({
   appointment,
   canWrite,
+  showDoctor,
   onCancel,
   onComplete,
   onEmitResult,
 }: {
   appointment: Appointment;
   canWrite: boolean;
+  showDoctor: boolean;
   onCancel: (id: string) => void;
   onComplete: (id: string) => void;
   onEmitResult: (appointment: Appointment) => void;
@@ -38,7 +40,9 @@ function AppointmentRow({
         <span>{appointment.patient?.fullName ?? '—'}</span>
         <span className="ml-1 text-xs text-muted-foreground font-mono">HC-{appointment.patient?.code}</span>
       </td>
-      <td className="py-3 pr-4 text-sm">{appointment.doctor?.fullName ?? '—'}</td>
+      {showDoctor && (
+        <td className="py-3 pr-4 text-sm">{appointment.doctor?.fullName ?? '—'}</td>
+      )}
       <td className="py-3 pr-4 text-sm">{appointment.studyType?.name ?? '—'}</td>
       <td className="py-3 pr-4 text-sm">
         {new Date(appointment.scheduledDate).toLocaleString()}
@@ -78,6 +82,7 @@ function AppointmentRow({
 export function AppointmentsPage() {
   const user = useAuthStore((s) => s.user);
   const canWrite = user?.role === 'admin' || user?.role === 'doctor';
+  const showDoctor = user?.role !== 'doctor';
 
   const [newOpen, setNewOpen] = useState(false);
   const [resultAppointment, setResultAppointment] = useState<Appointment | null>(null);
@@ -123,7 +128,7 @@ export function AppointmentsPage() {
           <table className="w-full">
             <thead className="border-b bg-muted/50">
               <tr>
-                {['#', 'Patient', 'Doctor', 'Study type', 'Date', 'Status', ''].map((h) => (
+                {['#', 'Patient', ...(showDoctor ? ['Doctor'] : []), 'Study type', 'Date', 'Status', ''].map((h) => (
                   <th key={h} className="py-3 pr-4 text-left text-xs font-medium text-muted-foreground uppercase">
                     {h}
                   </th>
@@ -136,6 +141,7 @@ export function AppointmentsPage() {
                   key={a.id}
                   appointment={a}
                   canWrite={canWrite}
+                  showDoctor={showDoctor}
                   onCancel={(id) => cancelMutation.mutate(id)}
                   onComplete={(id) => completeMutation.mutate(id)}
                   onEmitResult={setResultAppointment}
