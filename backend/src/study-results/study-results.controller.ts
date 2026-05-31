@@ -38,8 +38,11 @@ export class StudyResultsController {
 
   @ApiOperation({ summary: 'Get study results by appointment' })
   @Get('by-appointment/:appointmentId')
-  findByAppointment(@Param('appointmentId', ParseUUIDPipe) appointmentId: string) {
-    return this.studyResultsService.findByAppointment(appointmentId);
+  findByAppointment(
+    @Param('appointmentId', ParseUUIDPipe) appointmentId: string,
+    @CurrentUser() currentUser: User,
+  ) {
+    return this.studyResultsService.findByAppointment(appointmentId, currentUser);
   }
 
   @ApiOperation({ summary: 'Get a study result by id' })

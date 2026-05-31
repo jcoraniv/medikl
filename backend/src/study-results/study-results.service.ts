@@ -135,9 +135,17 @@ export class StudyResultsService {
     return result;
   }
 
-  findByAppointment(appointmentId: string): Promise<StudyResult[]> {
+  findByAppointment(appointmentId: string, currentUser: User): Promise<StudyResult[]> {
+    const where: Record<string, string> = { appointmentId };
+
+    if (currentUser.role === UserRole.DOCTOR) {
+      where.doctorId = currentUser.id;
+    } else if (currentUser.role === UserRole.PATIENT) {
+      where.patientId = currentUser.id;
+    }
+
     return this.resultRepo.find({
-      where: { appointmentId },
+      where,
       relations: ['patient', 'doctor', 'appointment', 'appointment.studyType'],
     });
   }

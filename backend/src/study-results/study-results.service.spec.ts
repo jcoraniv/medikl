@@ -280,14 +280,51 @@ describe('StudyResultsService', () => {
   // ─── findByAppointment ───────────────────────────────────────────────────────
 
   describe('findByAppointment', () => {
-    it('returns results for the given appointmentId', async () => {
+    it('admin sees all results for the appointment', async () => {
       resultRepo.find.mockResolvedValue([mockResult]);
 
-      const results = await service.findByAppointment(APPOINTMENT_ID);
+      const results = await service.findByAppointment(APPOINTMENT_ID, mockAdminUser);
 
       expect(results).toEqual([mockResult]);
       expect(resultRepo.find).toHaveBeenCalledWith(
         expect.objectContaining({ where: { appointmentId: APPOINTMENT_ID } }),
+      );
+    });
+
+    it('doctor only sees results where they are the doctor', async () => {
+      resultRepo.find.mockResolvedValue([mockResult]);
+
+      await service.findByAppointment(APPOINTMENT_ID, mockDoctorUser);
+
+      expect(resultRepo.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { appointmentId: APPOINTMENT_ID, doctorId: DOCTOR_ID },
+        }),
+      );
+    });
+
+    it('patient only sees results where they are the patient', async () => {
+      resultRepo.find.mockResolvedValue([mockResult]);
+
+      await service.findByAppointment(APPOINTMENT_ID, mockPatientUser);
+
+      expect(resultRepo.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { appointmentId: APPOINTMENT_ID, patientId: PATIENT_ID },
+        }),
+      );
+    });
+
+    it('returns empty array when patient queries an appointment that is not theirs', async () => {
+      resultRepo.find.mockResolvedValue([]);
+
+      const results = await service.findByAppointment('other-appt-uuid', mockPatientUser);
+
+      expect(results).toEqual([]);
+      expect(resultRepo.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { appointmentId: 'other-appt-uuid', patientId: PATIENT_ID },
+        }),
       );
     });
   });
