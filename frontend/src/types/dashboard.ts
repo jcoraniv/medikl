@@ -3,4 +3,6 @@ export interface DashboardStats {
   totalDoctors: number;
   totalAppointments: number;
   pendingResults: number;
+  patientsThisWeek: number;
+  cancelledAppointments: number;
 }

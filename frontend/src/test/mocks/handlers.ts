@@ -59,6 +59,8 @@ export const mockStats = {
   totalDoctors: 2,
   totalAppointments: 10,
   pendingResults: 3,
+  patientsThisWeek: 4,
+  cancelledAppointments: 6,
 };
 
 export const handlers = [

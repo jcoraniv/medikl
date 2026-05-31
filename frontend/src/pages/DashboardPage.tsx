@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { Users, Stethoscope, Calendar, ClipboardList } from 'lucide-react';
+import { Users, Stethoscope, Calendar, ClipboardList, UserCheck, XCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { dashboardService } from '@/services/dashboardService';
+import { useAuthStore } from '@/store/authStore';
 import type { DashboardStats } from '@/types/dashboard';
 
 function StatCardSkeleton() {
@@ -41,41 +42,43 @@ function StatCard({ title, value, description, icon: Icon }: StatCardProps) {
   );
 }
 
-function buildCards(stats: DashboardStats) {
+function buildAdminCards(stats: DashboardStats) {
   return [
-    {
-      title: 'Total Patients',
-      value: stats.totalPatients,
-      description: 'Registered patients',
-      icon: Users,
-    },
-    {
-      title: 'Total Doctors',
-      value: stats.totalDoctors,
-      description: 'Active doctors',
-      icon: Stethoscope,
-    },
-    {
-      title: 'Appointments',
-      value: stats.totalAppointments,
-      description: 'All time',
-      icon: Calendar,
-    },
-    {
-      title: 'Pending Results',
-      value: stats.pendingResults,
-      description: 'Awaiting review',
-      icon: ClipboardList,
-    },
+    { title: 'Total Patients',        value: stats.totalPatients,          description: 'Registered patients', icon: Users },
+    { title: 'Total Doctors',         value: stats.totalDoctors,           description: 'Active doctors',      icon: Stethoscope },
+    { title: 'Appointments',          value: stats.totalAppointments,      description: 'All time',            icon: Calendar },
+    { title: 'Pending Results',       value: stats.pendingResults,         description: 'Awaiting review',     icon: ClipboardList },
+    { title: 'Patients This Week',    value: stats.patientsThisWeek,       description: 'Attended this week',  icon: UserCheck },
+    { title: 'Cancelled',             value: stats.cancelledAppointments,  description: 'This year',           icon: XCircle },
+  ];
+}
+
+function buildDoctorCards(stats: DashboardStats) {
+  return [
+    { title: 'My Appointments',    value: stats.totalAppointments,     description: 'All time',           icon: Calendar },
+    { title: 'Pending',            value: stats.pendingResults,        description: 'Scheduled',          icon: ClipboardList },
+    { title: 'Patients This Week', value: stats.patientsThisWeek,      description: 'Attended this week', icon: UserCheck },
+    { title: 'Cancelled',          value: stats.cancelledAppointments, description: 'All time',           icon: XCircle },
   ];
 }
 
 export function DashboardPage() {
+  const user = useAuthStore((s) => s.user);
+  const isDoctor = user?.role === 'doctor';
+
   const { data: stats, isLoading, isError } = useQuery({
     queryKey: ['dashboard', 'stats'],
     queryFn: dashboardService.getStats,
     staleTime: 30_000,
   });
+
+  const cards = stats
+    ? isDoctor
+      ? buildDoctorCards(stats)
+      : buildAdminCards(stats)
+    : [];
+
+  const skeletonCount = isDoctor ? 4 : 6;
 
   return (
     <div className="p-8">
@@ -90,8 +93,8 @@ export function DashboardPage() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {isLoading
-          ? Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
-          : stats && buildCards(stats).map((card) => <StatCard key={card.title} {...card} />)}
+          ? Array.from({ length: skeletonCount }).map((_, i) => <StatCardSkeleton key={i} />)
+          : cards.map((card) => <StatCard key={card.title} {...card} />)}
       </div>
     </div>
   );

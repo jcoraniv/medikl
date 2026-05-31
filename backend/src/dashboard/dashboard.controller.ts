@@ -1,6 +1,8 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { DashboardService, DashboardStats } from './dashboard.service';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { User } from '../users/entities/user.entity';
 
 @ApiTags('dashboard')
 @ApiBearerAuth()
@@ -10,7 +12,7 @@ export class DashboardController {
 
   @ApiOperation({ summary: 'Get dashboard summary stats' })
   @Get('stats')
-  getStats(): Promise<DashboardStats> {
-    return this.dashboardService.getStats();
+  getStats(@CurrentUser() currentUser: User): Promise<DashboardStats> {
+    return this.dashboardService.getStats(currentUser);
   }
 }
