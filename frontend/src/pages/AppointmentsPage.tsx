@@ -74,7 +74,7 @@ function AppointmentRow({
       </td>
       <td className="py-3 px-4 text-right">
         {hasActions && (
-          <DropdownMenu>
+          <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <Button size="sm" variant="ghost" className="h-8 w-8 p-0 transition-all duration-200 data-[state=open]:rotate-90 data-[state=open]:bg-accent">
                 <MoreHorizontal size={16} />

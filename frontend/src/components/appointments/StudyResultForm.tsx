@@ -48,8 +48,8 @@ export function StudyResultForm({
   return (
     <div className="space-y-4">
       <div className="rounded-md bg-muted/40 px-4 py-3 text-sm space-y-1">
-        <p><span className="text-muted-foreground">Patient:</span> {appointment.patient.fullName}</p>
-        <p><span className="text-muted-foreground">Doctor:</span> {appointment.doctor.fullName}</p>
+        <p><span className="text-muted-foreground">Patient:</span> {appointment.patient?.fullName ?? '—'}</p>
+        <p><span className="text-muted-foreground">Doctor:</span> {appointment.doctor?.fullName ?? '—'}</p>
         {appointment.studyType && (
           <p><span className="text-muted-foreground">Study type:</span> {appointment.studyType.name}</p>
         )}

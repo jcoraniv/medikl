@@ -19,6 +19,8 @@ const mockAdminUser: User = {
   fullName: 'Admin User',
   passwordHash: 'hash',
   role: UserRole.ADMIN,
+  phone: null,
+  deletedAt: null,
   createdAt: new Date(),
   updatedAt: new Date(),
 };
@@ -30,6 +32,8 @@ const mockDoctorUser: User = {
   fullName: 'Dra. García',
   passwordHash: 'hash',
   role: UserRole.DOCTOR,
+  phone: null,
+  deletedAt: null,
   createdAt: new Date(),
   updatedAt: new Date(),
 };
@@ -41,6 +45,8 @@ const mockPatientUser: User = {
   fullName: 'Carlos López',
   passwordHash: 'hash',
   role: UserRole.PATIENT,
+  phone: null,
+  deletedAt: null,
   createdAt: new Date(),
   updatedAt: new Date(),
 };
@@ -52,6 +58,8 @@ const mockOtherDoctor: User = {
   fullName: 'Dr. Otro',
   passwordHash: 'hash',
   role: UserRole.DOCTOR,
+  phone: null,
+  deletedAt: null,
   createdAt: new Date(),
   updatedAt: new Date(),
 };
