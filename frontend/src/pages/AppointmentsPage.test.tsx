@@ -10,8 +10,9 @@ import { useAuthStore } from '@/store/authStore';
 import { API_BASE_URL } from '@/lib/config';
 import { AppointmentsPage } from './AppointmentsPage';
 
-const ADMIN_USER  = { id: 'u1', code: 99, email: 'admin@test.com',  fullName: 'Admin',       role: 'admin'  as const };
-const DOCTOR_USER = { id: 'doctor-uuid', code: 2, email: 'doctor@test.com', fullName: 'Dra. García', role: 'doctor' as const };
+const ADMIN_USER   = { id: 'u1', code: 99, email: 'admin@test.com',   fullName: 'Admin',       role: 'admin'   as const };
+const DOCTOR_USER  = { id: 'doctor-uuid', code: 2, email: 'doctor@test.com', fullName: 'Dra. García', role: 'doctor' as const };
+const PATIENT_USER = { id: 'patient-uuid', code: 1, email: 'patient@test.com', fullName: 'Carlos López', role: 'patient' as const };
 
 function renderPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -135,5 +136,36 @@ describe('AppointmentsPage', () => {
     await userEvent.click(screen.getByRole('button', { name: /new appointment/i }));
     await screen.findByRole('dialog');
     expect(screen.queryByLabelText(/doctor/i)).not.toBeInTheDocument();
+  });
+
+  // ─── Patient role ─────────────────────────────────────────────────────────
+
+  describe('patient role', () => {
+    beforeEach(() => {
+      useAuthStore.setState({ token: 'mock-token', user: PATIENT_USER, isAuthenticated: true });
+    });
+
+    it('does not show New appointment button', async () => {
+      renderPage();
+      await screen.findByText('Dra. García');
+      expect(screen.queryByRole('button', { name: /new appointment/i })).not.toBeInTheDocument();
+    });
+
+    it('hides Patient column (redundant for own appointments)', async () => {
+      renderPage();
+      await screen.findByText('Dra. García');
+      expect(screen.queryByRole('columnheader', { name: /patient/i })).not.toBeInTheDocument();
+    });
+
+    it('shows Doctor column', async () => {
+      renderPage();
+      expect(await screen.findByRole('columnheader', { name: /doctor/i })).toBeInTheDocument();
+    });
+
+    it('does not show action menu', async () => {
+      renderPage();
+      await screen.findByText('Dra. García');
+      expect(screen.queryByRole('button', { name: /open menu/i })).not.toBeInTheDocument();
+    });
   });
 });

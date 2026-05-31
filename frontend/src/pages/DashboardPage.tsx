@@ -62,9 +62,18 @@ function buildDoctorCards(stats: DashboardStats) {
   ];
 }
 
+function buildPatientCards(stats: DashboardStats) {
+  return [
+    { title: 'This Month',  value: stats.totalAppointments,     description: 'My appointments', icon: Calendar },
+    { title: 'Pending',     value: stats.pendingResults,        description: 'Scheduled',       icon: ClipboardList },
+    { title: 'Cancelled',   value: stats.cancelledAppointments, description: 'This month',      icon: XCircle },
+  ];
+}
+
 export function DashboardPage() {
   const user = useAuthStore((s) => s.user);
   const isDoctor = user?.role === 'doctor';
+  const isPatient = user?.role === 'patient';
 
   const { data: stats, isLoading, isError } = useQuery({
     queryKey: ['dashboard', 'stats'],
@@ -73,12 +82,12 @@ export function DashboardPage() {
   });
 
   const cards = stats
-    ? isDoctor
-      ? buildDoctorCards(stats)
-      : buildAdminCards(stats)
+    ? isPatient ? buildPatientCards(stats)
+    : isDoctor  ? buildDoctorCards(stats)
+    : buildAdminCards(stats)
     : [];
 
-  const skeletonCount = isDoctor ? 4 : 6;
+  const skeletonCount = isPatient ? 3 : isDoctor ? 4 : 6;
 
   return (
     <div className="p-8">

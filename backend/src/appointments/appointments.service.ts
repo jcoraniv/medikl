@@ -66,13 +66,15 @@ export class AppointmentsService {
   ): Promise<PaginatedResponse<Appointment>> {
     const { page, limit } = pagination;
     const where: Record<string, unknown> = {};
-    if (patientId) where.patientId = patientId;
     if (status) where.status = status;
 
     if (currentUser.role === UserRole.DOCTOR) {
       where.doctorId = currentUser.id;
-    } else if (doctorId) {
-      where.doctorId = doctorId;
+    } else if (currentUser.role === UserRole.PATIENT) {
+      where.patientId = currentUser.id;
+    } else {
+      if (patientId) where.patientId = patientId;
+      if (doctorId) where.doctorId = doctorId;
     }
 
     const [data, total] = await this.appointmentRepo.findAndCount({
@@ -179,6 +181,9 @@ export class AppointmentsService {
 
   private assertOwnership(appointment: Appointment, currentUser: User): void {
     if (currentUser.role === UserRole.DOCTOR && appointment.doctorId !== currentUser.id) {
+      throw new ForbiddenException('You can only access your own appointments');
+    }
+    if (currentUser.role === UserRole.PATIENT && appointment.patientId !== currentUser.id) {
       throw new ForbiddenException('You can only access your own appointments');
     }
   }

@@ -34,6 +34,13 @@ function currentYearRange(): { start: Date; end: Date } {
   };
 }
 
+function currentMonthRange(): { start: Date; end: Date } {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  return { start, end };
+}
+
 @Injectable()
 export class DashboardService {
   constructor(
@@ -46,6 +53,17 @@ export class DashboardService {
   async getStats(currentUser: User): Promise<DashboardStats> {
     const { start, end } = currentWeekRange();
     const { start: yearStart, end: yearEnd } = currentYearRange();
+    const { start: monthStart, end: monthEnd } = currentMonthRange();
+
+    if (currentUser.role === UserRole.PATIENT) {
+      const [totalAppointments, pendingResults, cancelledAppointments] = await Promise.all([
+        this.appointmentRepo.count({ where: { patientId: currentUser.id, scheduledDate: Between(monthStart, monthEnd) } }),
+        this.appointmentRepo.count({ where: { patientId: currentUser.id, status: AppointmentStatus.SCHEDULED } }),
+        this.appointmentRepo.count({ where: { patientId: currentUser.id, status: AppointmentStatus.CANCELLED, scheduledDate: Between(monthStart, monthEnd) } }),
+      ]);
+      return { totalPatients: 0, totalDoctors: 0, totalAppointments, pendingResults, patientsThisWeek: 0, cancelledAppointments };
+    }
+
     const isDoctor = currentUser.role === UserRole.DOCTOR;
 
     if (isDoctor) {

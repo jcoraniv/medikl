@@ -9,8 +9,9 @@ import { useAuthStore } from '@/store/authStore';
 import { API_BASE_URL } from '@/lib/config';
 import { DashboardPage } from './DashboardPage';
 
-const ADMIN_USER  = { id: 'u1', code: 99, email: 'admin@test.com',  fullName: 'Admin',       role: 'admin'  as const };
-const DOCTOR_USER = { id: 'u2', code: 2,  email: 'doctor@test.com', fullName: 'Dra. García', role: 'doctor' as const };
+const ADMIN_USER   = { id: 'u1', code: 99, email: 'admin@test.com',   fullName: 'Admin',       role: 'admin'   as const };
+const DOCTOR_USER  = { id: 'u2', code: 2,  email: 'doctor@test.com',  fullName: 'Dra. García', role: 'doctor'  as const };
+const PATIENT_USER = { id: 'u3', code: 3,  email: 'patient@test.com', fullName: 'Carlos López', role: 'patient' as const };
 
 function renderDashboardPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -110,6 +111,42 @@ describe('DashboardPage', () => {
         expect(screen.getByText(mockStats.totalAppointments)).toBeInTheDocument();
         expect(screen.getByText(mockStats.pendingResults)).toBeInTheDocument();
         expect(screen.getByText(mockStats.patientsThisWeek)).toBeInTheDocument();
+        expect(screen.getByText(mockStats.cancelledAppointments)).toBeInTheDocument();
+      });
+    });
+  });
+
+  // ─── Patient role ─────────────────────────────────────────────────────────
+
+  describe('patient role', () => {
+    beforeEach(() => {
+      useAuthStore.setState({ token: 'mock-token', user: PATIENT_USER, isAuthenticated: true });
+    });
+
+    it('shows This Month, Pending and Cancelled cards', async () => {
+      renderDashboardPage();
+
+      expect(await screen.findByText('This Month')).toBeInTheDocument();
+      expect(await screen.findByText('Pending')).toBeInTheDocument();
+      expect(await screen.findByText('Cancelled')).toBeInTheDocument();
+    });
+
+    it('does not show admin-only cards', async () => {
+      renderDashboardPage();
+      await screen.findByText('This Month');
+
+      expect(screen.queryByText('Total Patients')).not.toBeInTheDocument();
+      expect(screen.queryByText('Total Doctors')).not.toBeInTheDocument();
+      expect(screen.queryByText('Patients This Week')).not.toBeInTheDocument();
+      expect(screen.queryByText('My Appointments')).not.toBeInTheDocument();
+    });
+
+    it('displays this-month, pending and cancelled values', async () => {
+      renderDashboardPage();
+
+      await waitFor(() => {
+        expect(screen.getByText(mockStats.totalAppointments)).toBeInTheDocument();
+        expect(screen.getByText(mockStats.pendingResults)).toBeInTheDocument();
         expect(screen.getByText(mockStats.cancelledAppointments)).toBeInTheDocument();
       });
     });

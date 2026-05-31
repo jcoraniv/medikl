@@ -15,12 +15,14 @@ export class StudyTypesController {
   constructor(private readonly studyTypesService: StudyTypesService) {}
 
   @ApiOperation({ summary: 'List all study types (paginated)' })
+  @Roles(UserRole.ADMIN, UserRole.DOCTOR)
   @Get()
   findAll(@Query() pagination: PaginationQueryDto) {
     return this.studyTypesService.findAll(pagination);
   }
 
   @ApiOperation({ summary: 'Get study type by id' })
+  @Roles(UserRole.ADMIN, UserRole.DOCTOR)
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.studyTypesService.findOne(id);

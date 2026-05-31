@@ -19,6 +19,7 @@ import {
   studyTypesService,
   type StudyTypePayload,
 } from '@/services/studyTypesService';
+import { Navigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import type { StudyType } from '@/types/appointment';
 
@@ -135,6 +136,9 @@ function StudyTypeForm({
 
 export function StudyTypesPage() {
   const user = useAuthStore((s) => s.user);
+
+  if (user?.role === 'patient') return <Navigate to="/dashboard" replace />;
+
   const isAdmin = user?.role === 'admin';
   const isDoctor = user?.role === 'doctor';
   const canCreate = isAdmin || isDoctor;

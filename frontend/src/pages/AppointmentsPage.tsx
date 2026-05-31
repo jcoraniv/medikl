@@ -28,6 +28,7 @@ function AppointmentRow({
   appointment,
   canWrite,
   showDoctor,
+  showPatient,
   onCancel,
   onComplete,
   onEmitResult,
@@ -35,6 +36,7 @@ function AppointmentRow({
   appointment: Appointment;
   canWrite: boolean;
   showDoctor: boolean;
+  showPatient: boolean;
   onCancel: (id: string) => void;
   onComplete: (id: string) => void;
   onEmitResult: (appointment: Appointment) => void;
@@ -46,10 +48,12 @@ function AppointmentRow({
   return (
     <tr className="border-b last:border-0 [&>td]:transition-all [&>td]:duration-150 hover:[&>td]:py-4 hover:[&>td]:bg-muted/50">
       <td className="py-3 px-4 text-xs font-mono text-muted-foreground">#{appointment.code}</td>
-      <td className="py-3 px-4 text-sm">
-        <span>{appointment.patient?.fullName ?? '—'}</span>
-        <span className="ml-1 text-xs text-muted-foreground font-mono">HC-{appointment.patient?.code}</span>
-      </td>
+      {showPatient && (
+        <td className="py-3 px-4 text-sm">
+          <span>{appointment.patient?.fullName ?? '—'}</span>
+          <span className="ml-1 text-xs text-muted-foreground font-mono">HC-{appointment.patient?.code}</span>
+        </td>
+      )}
       {showDoctor && (
         <td className="py-3 px-4 text-sm">{appointment.doctor?.fullName ?? '—'}</td>
       )}
@@ -102,8 +106,10 @@ function AppointmentRow({
 
 export function AppointmentsPage() {
   const user = useAuthStore((s) => s.user);
+  const isPatient = user?.role === 'patient';
   const canWrite = user?.role === 'admin' || user?.role === 'doctor';
   const showDoctor = user?.role !== 'doctor';
+  const showPatient = !isPatient;
 
   const [newOpen, setNewOpen] = useState(false);
   const [resultAppointment, setResultAppointment] = useState<Appointment | null>(null);
@@ -141,10 +147,12 @@ export function AppointmentsPage() {
           <h1 className="text-2xl font-bold">Appointments</h1>
           <p className="text-muted-foreground">Manage medical appointments</p>
         </div>
-        <Button onClick={() => setNewOpen(true)} className="gap-2">
-          <Plus size={16} />
-          New appointment
-        </Button>
+        {canWrite && (
+          <Button onClick={() => setNewOpen(true)} className="gap-2">
+            <Plus size={16} />
+            New appointment
+          </Button>
+        )}
       </div>
 
       {isLoading ? (
@@ -158,7 +166,7 @@ export function AppointmentsPage() {
           <table className="w-full">
             <thead className="border-b bg-muted/50">
               <tr>
-                {['#', 'Patient', ...(showDoctor ? ['Doctor'] : []), 'Study type', 'Date', 'Status', ''].map((h) => (
+                {['#', ...(showPatient ? ['Patient'] : []), ...(showDoctor ? ['Doctor'] : []), 'Study type', 'Date', 'Status', ''].map((h) => (
                   <th key={h} className="py-3 px-4 text-left text-xs font-medium text-muted-foreground uppercase">
                     {h}
                   </th>
@@ -172,6 +180,7 @@ export function AppointmentsPage() {
                   appointment={a}
                   canWrite={canWrite}
                   showDoctor={showDoctor}
+                  showPatient={showPatient}
                   onCancel={(id) => cancelMutation.mutate(id)}
                   onComplete={(id) => completeMutation.mutate(id)}
                   onEmitResult={setResultAppointment}

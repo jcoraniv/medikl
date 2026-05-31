@@ -62,7 +62,10 @@ const mockAppointmentRepo = {
   save: jest.fn(),
   find: jest.fn(),
   findOne: jest.fn(),
+  findAndCount: jest.fn(),
 };
+
+const DEFAULT_PAGINATION = { page: 1, limit: 10 };
 
 const mockUserRepo = {
   findOne: jest.fn(),
@@ -153,6 +156,50 @@ describe('AppointmentsService', () => {
     });
   });
 
+  // ─── findAll ─────────────────────────────────────────────────────────────────
+
+  describe('findAll', () => {
+    it('returns all appointments for admin without scope filter', async () => {
+      mockAppointmentRepo.findAndCount.mockResolvedValue([[mockAppointment], 1]);
+
+      const result = await service.findAll(mockAdmin, DEFAULT_PAGINATION);
+
+      expect(result.data).toEqual([mockAppointment]);
+      expect(mockAppointmentRepo.findAndCount).toHaveBeenCalledWith(
+        expect.objectContaining({ where: {} }),
+      );
+    });
+
+    it('scopes appointments by doctorId for doctor role', async () => {
+      mockAppointmentRepo.findAndCount.mockResolvedValue([[mockAppointment], 1]);
+
+      await service.findAll(mockDoctor, DEFAULT_PAGINATION);
+
+      expect(mockAppointmentRepo.findAndCount).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { doctorId: mockDoctor.id } }),
+      );
+    });
+
+    it('scopes appointments by patientId for patient role', async () => {
+      mockAppointmentRepo.findAndCount.mockResolvedValue([[mockAppointment], 1]);
+
+      await service.findAll(mockPatient, DEFAULT_PAGINATION);
+
+      expect(mockAppointmentRepo.findAndCount).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { patientId: mockPatient.id } }),
+      );
+    });
+
+    it('patient cannot override their own patientId via query param', async () => {
+      mockAppointmentRepo.findAndCount.mockResolvedValue([[], 0]);
+
+      await service.findAll(mockPatient, DEFAULT_PAGINATION, 'other-patient-uuid');
+
+      const call = mockAppointmentRepo.findAndCount.mock.calls[0][0];
+      expect(call.where.patientId).toBe(mockPatient.id);
+    });
+  });
+
   // ─── findOne ─────────────────────────────────────────────────────────────────
 
   describe('findOne', () => {
@@ -172,11 +219,26 @@ describe('AppointmentsService', () => {
       expect(result).toEqual(mockAppointment);
     });
 
+    it('returns the appointment when the patient owns it', async () => {
+      mockAppointmentRepo.findOne.mockResolvedValue(mockAppointment);
+
+      const result = await service.findOne('appt-uuid', mockPatient);
+
+      expect(result).toEqual(mockAppointment);
+    });
+
     it('throws ForbiddenException when a doctor accesses another doctor\'s appointment', async () => {
       const otherDoctor: User = { ...mockDoctor, id: 'other-doctor-uuid' };
       mockAppointmentRepo.findOne.mockResolvedValue(mockAppointment);
 
       await expect(service.findOne('appt-uuid', otherDoctor)).rejects.toThrow(ForbiddenException);
+    });
+
+    it('throws ForbiddenException when a patient accesses another patient\'s appointment', async () => {
+      const otherPatient: User = { ...mockPatient, id: 'other-patient-uuid' };
+      mockAppointmentRepo.findOne.mockResolvedValue(mockAppointment);
+
+      await expect(service.findOne('appt-uuid', otherPatient)).rejects.toThrow(ForbiddenException);
     });
 
     it('throws NotFoundException when appointment does not exist', async () => {

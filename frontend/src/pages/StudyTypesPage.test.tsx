@@ -67,14 +67,14 @@ describe('StudyTypesPage', () => {
     expect(await screen.findByRole('button', { name: /new study type/i })).toBeInTheDocument();
   });
 
-  it('hides New study type button for patient role', async () => {
+  it('redirects patient away — study types page is not accessible', () => {
     useAuthStore.setState({
       token: 'mock-token',
       user: { id: 'u3', code: 3, email: 'patient@test.com', fullName: 'Patient', role: 'patient' },
       isAuthenticated: true,
     });
     renderPage();
-    await screen.findByText('Ecografía abdominal');
+    expect(screen.queryByRole('heading', { name: /study types/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /new study type/i })).not.toBeInTheDocument();
   });
 

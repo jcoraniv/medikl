@@ -76,13 +76,15 @@ export class StudyResultsService {
   ): Promise<PaginatedResponse<StudyResult>> {
     const { page, limit } = pagination;
     const where: Record<string, string> = {};
-    if (patientId) where.patientId = patientId;
     if (appointmentId) where.appointmentId = appointmentId;
 
     if (currentUser.role === UserRole.DOCTOR) {
       where.doctorId = currentUser.id;
-    } else if (doctorId) {
-      where.doctorId = doctorId;
+    } else if (currentUser.role === UserRole.PATIENT) {
+      where.patientId = currentUser.id;
+    } else {
+      if (patientId) where.patientId = patientId;
+      if (doctorId) where.doctorId = doctorId;
     }
 
     const [data, total] = await this.resultRepo.findAndCount({

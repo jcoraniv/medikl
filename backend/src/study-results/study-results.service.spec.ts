@@ -34,6 +34,17 @@ const mockDoctorUser: User = {
   updatedAt: new Date(),
 };
 
+const mockPatientUser: User = {
+  id: PATIENT_ID,
+  code: 1,
+  email: 'patient@test.com',
+  fullName: 'Carlos López',
+  passwordHash: 'hash',
+  role: UserRole.PATIENT,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
+
 const mockOtherDoctor: User = {
   id: 'other-doctor-uuid',
   code: 3,
@@ -214,6 +225,25 @@ describe('StudyResultsService', () => {
       expect(resultRepo.findAndCount).toHaveBeenCalledWith(
         expect.objectContaining({ where: { doctorId: DOCTOR_ID } }),
       );
+    });
+
+    it('patient only sees their own results (patientId auto-forced)', async () => {
+      resultRepo.findAndCount.mockResolvedValue([[mockResult], 1]);
+
+      await service.findAll(mockPatientUser, DEFAULT_PAGINATION);
+
+      expect(resultRepo.findAndCount).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { patientId: PATIENT_ID } }),
+      );
+    });
+
+    it('patient cannot override their own patientId via query param', async () => {
+      resultRepo.findAndCount.mockResolvedValue([[], 0]);
+
+      await service.findAll(mockPatientUser, DEFAULT_PAGINATION, 'other-patient-uuid');
+
+      const call = resultRepo.findAndCount.mock.calls[0][0];
+      expect(call.where.patientId).toBe(PATIENT_ID);
     });
 
     it('admin applies combined filters', async () => {

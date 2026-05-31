@@ -7,7 +7,7 @@ import { useAuthStore } from '@/store/authStore';
 const navItems = [
   { to: '/dashboard',     label: 'Dashboard',       icon: LayoutDashboard },
   { to: '/appointments',  label: 'Appointments',    icon: Calendar },
-  { to: '/study-types',   label: 'Study Types',     icon: FlaskConical },
+  { to: '/study-types',   label: 'Study Types',     icon: FlaskConical,  roles: ['admin', 'doctor'] },
   { to: '/study-results', label: 'Study Results',   icon: FileText },
   { to: '/search',        label: 'Semantic Search', icon: Search },
 ];
@@ -36,7 +36,7 @@ function Sidebar({ onClose, user, onLogout, closeable }: SidebarProps) {
       </div>
 
       <nav className="flex-1 space-y-1 px-3 py-4">
-        {navItems.map(({ to, label, icon: Icon }) => (
+        {navItems.filter(item => !item.roles || item.roles.includes(user?.role ?? '')).map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}

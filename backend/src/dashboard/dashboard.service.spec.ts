@@ -94,6 +94,58 @@ describe('DashboardService', () => {
     });
   });
 
+  describe('getStats — patient role', () => {
+    const patient = makeUser(UserRole.PATIENT, 'patient-uuid');
+
+    it('returns this-month appointments, pending and this-month cancelled for the patient', async () => {
+      mockAppointmentRepo.count.mockResolvedValueOnce(4).mockResolvedValueOnce(2).mockResolvedValueOnce(1);
+
+      const result = await service.getStats(patient);
+
+      expect(result.totalAppointments).toBe(4);
+      expect(result.pendingResults).toBe(2);
+      expect(result.cancelledAppointments).toBe(1);
+    });
+
+    it('returns 0 for totalPatients, totalDoctors and patientsThisWeek', async () => {
+      mockAppointmentRepo.count.mockResolvedValue(0);
+
+      const result = await service.getStats(patient);
+
+      expect(result.totalPatients).toBe(0);
+      expect(result.totalDoctors).toBe(0);
+      expect(result.patientsThisWeek).toBe(0);
+    });
+
+    it('does not query user counts', async () => {
+      mockAppointmentRepo.count.mockResolvedValue(0);
+
+      await service.getStats(patient);
+
+      expect(mockUserRepo.count).not.toHaveBeenCalled();
+    });
+
+    it('scopes all queries to patientId', async () => {
+      mockAppointmentRepo.count.mockResolvedValue(0);
+
+      await service.getStats(patient);
+
+      for (const [args] of mockAppointmentRepo.count.mock.calls as [{ where: Record<string, unknown> }][]) {
+        expect(args.where.patientId).toBe('patient-uuid');
+      }
+    });
+
+    it('filters this-month appointments by scheduledDate range', async () => {
+      mockAppointmentRepo.count.mockResolvedValue(0);
+
+      await service.getStats(patient);
+
+      const calls = mockAppointmentRepo.count.mock.calls as [{ where: Record<string, unknown> }][];
+      const monthCall = calls.find((args) => args[0].where.scheduledDate !== undefined && args[0].where.status === undefined);
+      expect(monthCall).toBeDefined();
+    });
+  });
+
   describe('getStats — doctor role', () => {
     const doctor = makeUser(UserRole.DOCTOR, 'doctor-uuid');
 
