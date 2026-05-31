@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
@@ -33,7 +33,10 @@ export class UsersService {
     return this.userRepo.findOne({ where: { id } });
   }
 
-  findByRole(role: UserRole): Promise<User[]> {
+  findByRole(role: UserRole, requestingRole: UserRole): Promise<User[]> {
+    if (role === UserRole.ADMIN && requestingRole !== UserRole.ADMIN) {
+      throw new ForbiddenException('Only admins can list admin accounts');
+    }
     return this.userRepo.find({ where: { role } });
   }
 

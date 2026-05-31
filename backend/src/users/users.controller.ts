@@ -11,12 +11,14 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { CreateUserByAdminDto } from './dto/create-user-by-admin.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
+import { User } from './entities/user.entity';
 import { UserRole } from './entities/user.entity';
 import { UsersService } from './users.service';
 
@@ -26,12 +28,13 @@ import { UsersService } from './users.service';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @ApiOperation({ summary: 'List users, optionally filtered by role' })
+  @ApiOperation({ summary: 'List users by role — admin and doctor only' })
   @ApiQuery({ name: 'role', required: false, enum: UserRole })
+  @Roles(UserRole.ADMIN, UserRole.DOCTOR)
   @Get()
-  findAll(@Query('role') role?: UserRole) {
-    if (role) return this.usersService.findByRole(role);
-    return [];
+  findAll(@Query('role') role: UserRole, @CurrentUser() currentUser: User) {
+    if (!role) return [];
+    return this.usersService.findByRole(role, currentUser.role);
   }
 
   @ApiOperation({ summary: 'Create a user with any role (admin only)' })

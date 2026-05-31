@@ -1,4 +1,4 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { User, UserRole } from './entities/user.entity';
@@ -24,6 +24,7 @@ const DEFAULT_PAGINATION = { page: 1, limit: 10 };
 describe('UsersService — patient management', () => {
   let service: UsersService;
   let userRepo: {
+    find: jest.Mock;
     findOne: jest.Mock;
     findAndCount: jest.Mock;
     save: jest.Mock;
@@ -33,6 +34,7 @@ describe('UsersService — patient management', () => {
 
   beforeEach(async () => {
     userRepo = {
+      find: jest.fn(),
       findOne: jest.fn(),
       findAndCount: jest.fn(),
       save: jest.fn(),
@@ -48,6 +50,34 @@ describe('UsersService — patient management', () => {
     }).compile();
 
     service = module.get(UsersService);
+  });
+
+  // ─── findByRole ───────────────────────────────────────────────────────────────
+
+  describe('findByRole', () => {
+    it('returns users with the requested role', async () => {
+      userRepo.find.mockResolvedValue([mockPatient]);
+
+      const result = await service.findByRole(UserRole.PATIENT, UserRole.DOCTOR);
+
+      expect(result).toEqual([mockPatient]);
+      expect(userRepo.find).toHaveBeenCalledWith({ where: { role: UserRole.PATIENT } });
+    });
+
+    it('allows admin to list admin accounts', async () => {
+      userRepo.find.mockResolvedValue([]);
+
+      await expect(service.findByRole(UserRole.ADMIN, UserRole.ADMIN)).resolves.toBeDefined();
+    });
+
+    it('throws ForbiddenException when doctor tries to list admin accounts', () => {
+      expect(() => service.findByRole(UserRole.ADMIN, UserRole.DOCTOR)).toThrow(ForbiddenException);
+      expect(userRepo.find).not.toHaveBeenCalled();
+    });
+
+    it('throws ForbiddenException when patient tries to list admin accounts', () => {
+      expect(() => service.findByRole(UserRole.ADMIN, UserRole.PATIENT)).toThrow(ForbiddenException);
+    });
   });
 
   // ─── createUser ───────────────────────────────────────────────────────────────
