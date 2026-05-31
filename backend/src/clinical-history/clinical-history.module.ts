@@ -10,5 +10,6 @@ import { ClinicalHistoryService } from './clinical-history.service';
   imports: [TypeOrmModule.forFeature([User, Appointment, StudyResult])],
   controllers: [ClinicalHistoryController],
   providers: [ClinicalHistoryService],
+  exports: [ClinicalHistoryService],
 })
 export class ClinicalHistoryModule {}

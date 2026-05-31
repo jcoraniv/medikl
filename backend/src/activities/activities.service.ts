@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import OpenAI from 'openai';
 import { ConfigService } from '@nestjs/config';
+import { DEFAULT_LOCALE } from '../common/constants/app.constants';
 import { Activity, ActivityType } from './entities/activity.entity';
 import { CreateActivityDto } from './dto/create-activity.dto';
 
@@ -10,6 +11,8 @@ import { CreateActivityDto } from './dto/create-activity.dto';
 export class ActivitiesService {
   private readonly logger = new Logger(ActivitiesService.name);
   private readonly openai: OpenAI;
+
+  private readonly embeddingModel: string;
 
   constructor(
     @InjectRepository(Activity)
@@ -19,6 +22,7 @@ export class ActivitiesService {
     this.openai = new OpenAI({
       apiKey: this.config.get<string>('OPENAI_API_KEY'),
     });
+    this.embeddingModel = this.config.get<string>('OPENAI_EMBEDDING_MODEL', 'text-embedding-3-small');
   }
 
   async createActivity(dto: CreateActivityDto): Promise<Activity> {
@@ -80,7 +84,7 @@ export class ActivitiesService {
         const date = snapshot.scheduledDate as string | undefined;
         const studyType = snapshot.studyType as { name?: string } | undefined;
         const reason = snapshot.reason as string | undefined;
-        const dateStr = date ? new Date(date).toLocaleString('es-BO') : '';
+        const dateStr = date ? new Date(date).toLocaleString(DEFAULT_LOCALE) : '';
         let text = `Cita programada para ${patientName}${patientHC} con ${doctorName}`;
         if (dateStr) text += ` el ${dateStr}`;
         if (studyType?.name) text += `. Tipo de estudio: ${studyType.name}`;
@@ -139,7 +143,7 @@ export class ActivitiesService {
   ): Promise<void> {
     try {
       const response = await this.openai.embeddings.create({
-        model: 'text-embedding-3-small',
+        model: this.embeddingModel,
         input: text,
       });
       const embedding = response.data[0].embedding;

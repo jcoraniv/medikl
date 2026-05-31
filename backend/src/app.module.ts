@@ -3,9 +3,11 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { CodeSubscriber } from './common/subscribers/code.subscriber';
+import { THROTTLE_LIMIT, THROTTLE_TTL_MS } from './common/constants/app.constants';
 import { ActivitiesModule } from './activities/activities.module';
 import { AppointmentsModule } from './appointments/appointments.module';
 import { AuthModule } from './auth/auth.module';
+import { ChatModule } from './chat/chat.module';
 import { ClinicalHistoryModule } from './clinical-history/clinical-history.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { SearchModule } from './search/search.module';
@@ -16,7 +18,7 @@ import { UsersModule } from './users/users.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    ThrottlerModule.forRoot({ throttlers: [{ ttl: 60000, limit: 100 }] }),
+    ThrottlerModule.forRoot({ throttlers: [{ ttl: THROTTLE_TTL_MS, limit: THROTTLE_LIMIT }] }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
@@ -36,6 +38,7 @@ import { UsersModule } from './users/users.module';
     ActivitiesModule,
     AppointmentsModule,
     AuthModule,
+    ChatModule,
     ClinicalHistoryModule,
     DashboardModule,
     SearchModule,

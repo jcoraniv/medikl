@@ -201,6 +201,11 @@ export const handlers = [
     return new HttpResponse(null, { status: 204 });
   }),
 
+  http.post(`${API_BASE_URL}/chat/ask`, async ({ request }) => {
+    const body = await request.json() as { query: string };
+    return HttpResponse.json({ answer: `Respuesta IA para: "${body.query}"` });
+  }),
+
   http.get(`${API_BASE_URL}/clinical-history/:code`, ({ params }) => {
     if (params.code === '999') {
       return HttpResponse.json({ message: 'Patient not found' }, { status: 404 });

@@ -13,17 +13,19 @@ export interface SearchResult {
 @Injectable()
 export class SearchService {
   private readonly openai: OpenAI;
+  private readonly embeddingModel: string;
 
   constructor(
     private readonly activitiesService: ActivitiesService,
     private readonly config: ConfigService,
   ) {
     this.openai = new OpenAI({ apiKey: this.config.get<string>('OPENAI_API_KEY') });
+    this.embeddingModel = this.config.get<string>('OPENAI_EMBEDDING_MODEL', 'text-embedding-3-small');
   }
 
   async search(query: string, currentUser: User, limit = 10): Promise<SearchResult[]> {
     const response = await this.openai.embeddings.create({
-      model: 'text-embedding-3-small',
+      model: this.embeddingModel,
       input: query,
     });
     const queryEmbedding = response.data[0].embedding;

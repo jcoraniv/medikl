@@ -10,6 +10,7 @@ import { CreateUserByAdminDto } from './dto/create-user-by-admin.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
+import { BCRYPT_ROUNDS } from '../common/constants/app.constants';
 
 @Injectable()
 export class UsersService {
@@ -19,7 +20,7 @@ export class UsersService {
   ) {}
 
   async create(dto: CreateUserDto): Promise<User> {
-    const passwordHash = await bcrypt.hash(dto.password, 10);
+    const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
     const user = this.userRepo.create({ ...dto, passwordHash });
     return this.userRepo.save(user);
   }
@@ -37,7 +38,7 @@ export class UsersService {
   }
 
   async createUser(dto: CreateUserByAdminDto): Promise<User> {
-    const passwordHash = await bcrypt.hash(dto.password, 10);
+    const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
     const user = this.userRepo.create({
       fullName: dto.fullName,
       email: dto.email,
@@ -76,7 +77,7 @@ export class UsersService {
   }
 
   async createPatient(dto: CreatePatientDto): Promise<User> {
-    const passwordHash = await bcrypt.hash(dto.password, 10);
+    const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
     const user = this.userRepo.create({
       fullName: dto.fullName,
       email: dto.email,

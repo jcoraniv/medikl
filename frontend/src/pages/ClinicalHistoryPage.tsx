@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { ClinicalChat } from '@/components/chat/ClinicalChat';
 import { useMutation } from '@tanstack/react-query';
 import { Search, Loader2, User } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -106,6 +107,7 @@ export function ClinicalHistoryPage() {
   }
 
   return (
+    <>
     <div className="p-8 max-w-3xl space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Clinical History</h1>
@@ -172,5 +174,13 @@ export function ClinicalHistoryPage() {
         </div>
       )}
     </div>
+
+    {mutation.data && (
+      <ClinicalChat
+        patientCode={mutation.data.patient.code}
+        patientName={mutation.data.patient.fullName}
+      />
+    )}
+    </>
   );
 }
