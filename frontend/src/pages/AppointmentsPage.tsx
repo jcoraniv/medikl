@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Loader2, FileText, CheckCircle, XCircle, MoreHorizontal } from 'lucide-react';
 import { Pagination } from '@/components/ui/pagination';
@@ -47,7 +48,14 @@ function AppointmentRow({
 
   return (
     <tr className="border-b last:border-0 [&>td]:transition-all [&>td]:duration-150 hover:[&>td]:py-4 hover:[&>td]:bg-muted/50">
-      <td className="py-3 px-4 text-xs font-mono text-muted-foreground">#{appointment.code}</td>
+      <td className="py-3 px-4 text-xs font-mono text-muted-foreground">
+        <Link
+          to={`/appointments/${appointment.id}`}
+          className="underline hover:text-foreground transition-colors"
+        >
+          #{appointment.code}
+        </Link>
+      </td>
       {showPatient && (
         <td className="py-3 px-4 text-sm">
           <span>{appointment.patient?.fullName ?? '—'}</span>

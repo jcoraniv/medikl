@@ -87,6 +87,16 @@ export const handlers = [
     return HttpResponse.json({ ...mockAppointments[0], ...body, id: 'new-uuid' }, { status: 201 });
   }),
 
+  http.get(`${API_BASE_URL}/appointments/:id`, ({ params }) => {
+    const appt = mockAppointments.find((a) => a.id === params.id) ?? mockAppointments[0];
+    return HttpResponse.json(appt);
+  }),
+
+  http.get(`${API_BASE_URL}/study-results/by-appointment/:appointmentId`, ({ params }) => {
+    const results = mockStudyResults.filter((r) => r.appointmentId === params.appointmentId);
+    return HttpResponse.json(results);
+  }),
+
   http.patch(`${API_BASE_URL}/appointments/:id/cancel`, ({ params }) => {
     return HttpResponse.json({ ...mockAppointments[0], id: params.id, status: 'cancelled' });
   }),

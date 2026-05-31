@@ -4,6 +4,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { LoginPage } from '@/pages/LoginPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { AppointmentsPage } from '@/pages/AppointmentsPage';
+import { AppointmentOverviewPage } from '@/pages/AppointmentOverviewPage';
 import { StudyTypesPage } from '@/pages/StudyTypesPage';
 import { StudyResultsPage } from '@/pages/StudyResultsPage';
 import { SemanticSearchPage } from '@/pages/SemanticSearchPage';
@@ -16,6 +17,7 @@ function App() {
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/appointments" element={<AppointmentsPage />} />
+          <Route path="/appointments/:id" element={<AppointmentOverviewPage />} />
           <Route path="/study-types" element={<StudyTypesPage />} />
           <Route path="/study-results" element={<StudyResultsPage />} />
           <Route path="/search" element={<SemanticSearchPage />} />
