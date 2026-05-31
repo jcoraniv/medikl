@@ -1,29 +1,35 @@
 import api from '@/lib/axios';
 
 export interface ActivitySnapshot {
-  patient?: { fullName?: string; code?: number };
-  doctor?: { fullName?: string };
-  scheduledDate?: string;
-  studyType?: { name?: string };
-  reason?: string;
-  findings?: string;
+  patient?:    { fullName?: string; code?: number };
+  doctor?:     { fullName?: string };
+  findings?:   string;
   conclusion?: string;
+  appointment?: {
+    id?:           string;
+    code?:         number;
+    scheduledDate?: string;
+    duration?:     number;
+    reason?:       string;
+    notes?:        string;
+    studyType?:    { name?: string };
+  };
 }
 
 export interface SearchActivity {
-  id: string;
-  type: string;
-  patientId: string;
-  entityId: string;
-  entityType: string;
-  snapshot: ActivitySnapshot;
+  id:          string;
+  type:        string;
+  patientId:   string;
+  entityId:    string;
+  entityType:  string;
+  snapshot:    ActivitySnapshot;
   generatedText: string;
-  createdAt: string;
+  createdAt:   string;
 }
 
 export interface SearchResult {
   activity: SearchActivity;
-  score: number;
+  score:    number;
 }
 
 export const searchService = {

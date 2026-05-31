@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 import { ActivitiesService } from '../activities/activities.service';
-import { Activity } from '../activities/entities/activity.entity';
+import { Activity, ActivityType } from '../activities/entities/activity.entity';
 
 export interface SearchResult {
   activity: Activity;
@@ -27,7 +27,7 @@ export class SearchService {
     });
     const queryEmbedding = response.data[0].embedding;
 
-    const activities = await this.activitiesService.findAllWithEmbeddings();
+    const activities = await this.activitiesService.findAllWithEmbeddings([ActivityType.RESULT_CREATED]);
 
     return activities
       .map((activity) => ({

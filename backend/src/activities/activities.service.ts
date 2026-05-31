@@ -50,11 +50,14 @@ export class ActivitiesService {
     });
   }
 
-  findAllWithEmbeddings(): Promise<Activity[]> {
-    return this.activityRepo
+  findAllWithEmbeddings(types?: ActivityType[]): Promise<Activity[]> {
+    const qb = this.activityRepo
       .createQueryBuilder('a')
-      .where('a.embedding IS NOT NULL')
-      .getMany();
+      .where('a.embedding IS NOT NULL');
+    if (types?.length) {
+      qb.andWhere('a.type IN (:...types)', { types });
+    }
+    return qb.getMany();
   }
 
   private generateText(
@@ -101,10 +104,20 @@ export class ActivitiesService {
         return `Cita cancelada para ${patientName}${patientHC} con ${doctorName}.`;
 
       case ActivityType.RESULT_CREATED: {
-        const findings = snapshot.findings as string | undefined;
+        const findings   = snapshot.findings   as string | undefined;
         const conclusion = snapshot.conclusion as string | undefined;
+        const appt = snapshot.appointment as {
+          reason?: string; notes?: string; scheduledDate?: string;
+          studyType?: { name?: string };
+        } | undefined;
+        const studyType = appt?.studyType?.name;
+        const reason    = appt?.reason;
+        const notes     = appt?.notes;
         let text = `Resultado clínico registrado para ${patientName}${patientHC} por ${doctorName}`;
-        if (findings) text += `. Hallazgos: ${findings}`;
+        if (studyType) text += `. Estudio: ${studyType}`;
+        if (reason)    text += `. Motivo: ${reason}`;
+        if (notes)     text += `. Notas: ${notes}`;
+        if (findings)  text += `. Hallazgos: ${findings}`;
         if (conclusion) text += `. Conclusión: ${conclusion}`;
         return text + '.';
       }

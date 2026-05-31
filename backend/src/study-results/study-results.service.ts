@@ -1,11 +1,22 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ActivitiesService } from '../activities/activities.service';
 import { ActivityType } from '../activities/entities/activity.entity';
-import { Appointment, AppointmentStatus } from '../appointments/entities/appointment.entity';
+import {
+  Appointment,
+  AppointmentStatus,
+} from '../appointments/entities/appointment.entity';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
-import { paginate, PaginatedResponse } from '../common/interfaces/paginated-response.interface';
+import {
+  paginate,
+  PaginatedResponse,
+} from '../common/interfaces/paginated-response.interface';
 import { User, UserRole } from '../users/entities/user.entity';
 import { CreateStudyResultDto } from './dto/create-study-result.dto';
 import { UpdateStudyResultDto } from './dto/update-study-result.dto';
@@ -23,23 +34,39 @@ export class StudyResultsService {
     private readonly activitiesService: ActivitiesService,
   ) {}
 
-  async create(dto: CreateStudyResultDto, currentUser: User): Promise<StudyResult> {
+  async create(
+    dto: CreateStudyResultDto,
+    currentUser: User,
+  ): Promise<StudyResult> {
     const appointment = await this.appointmentRepo.findOne({
       where: { id: dto.appointmentId },
       relations: ['studyType'],
     });
-    if (!appointment) throw new NotFoundException(`Appointment ${dto.appointmentId} not found`);
+    if (!appointment)
+      throw new NotFoundException(`Appointment ${dto.appointmentId} not found`);
     if (appointment.status === AppointmentStatus.CANCELLED) {
-      throw new BadRequestException('Cannot add results to a cancelled appointment');
+      throw new BadRequestException(
+        'Cannot add results to a cancelled appointment',
+      );
     }
 
     // Doctors can only emit results for their own appointments
-    if (currentUser.role === UserRole.DOCTOR && appointment.doctorId !== currentUser.id) {
-      throw new ForbiddenException('You can only emit results for your own appointments');
+    if (
+      currentUser.role === UserRole.DOCTOR &&
+      appointment.doctorId !== currentUser.id
+    ) {
+      throw new ForbiddenException(
+        'You can only emit results for your own appointments',
+      );
     }
 
-    const existing = await this.resultRepo.findOne({ where: { appointmentId: dto.appointmentId } });
-    if (existing) throw new BadRequestException('This appointment already has a study result');
+    const existing = await this.resultRepo.findOne({
+      where: { appointmentId: dto.appointmentId },
+    });
+    if (existing)
+      throw new BadRequestException(
+        'This appointment already has a study result',
+      );
 
     const result = await this.resultRepo.save(
       this.resultRepo.create({
@@ -52,7 +79,9 @@ export class StudyResultsService {
     );
 
     if (appointment.status === AppointmentStatus.SCHEDULED) {
-      await this.appointmentRepo.update(appointment.id, { status: AppointmentStatus.COMPLETED });
+      await this.appointmentRepo.update(appointment.id, {
+        status: AppointmentStatus.COMPLETED,
+      });
     }
 
     const fullResult = await this.findOne(result.id);
@@ -113,16 +142,25 @@ export class StudyResultsService {
     });
   }
 
-  async update(id: string, dto: UpdateStudyResultDto, currentUser: User): Promise<StudyResult> {
+  async update(
+    id: string,
+    dto: UpdateStudyResultDto,
+    currentUser: User,
+  ): Promise<StudyResult> {
     const result = await this.findOne(id);
 
-    if (currentUser.role === UserRole.DOCTOR && result.doctorId !== currentUser.id) {
-      throw new ForbiddenException('You can only update your own study results');
+    if (
+      currentUser.role === UserRole.DOCTOR &&
+      result.doctorId !== currentUser.id
+    ) {
+      throw new ForbiddenException(
+        'You can only update your own study results',
+      );
     }
 
     Object.assign(result, dto);
     const saved = await this.resultRepo.save(result);
-    const full  = await this.findOne(saved.id);
+    const full = await this.findOne(saved.id);
 
     this.activitiesService.createActivity({
       type: ActivityType.RESULT_UPDATED,
@@ -136,13 +174,30 @@ export class StudyResultsService {
   }
 
   private buildSnapshot(r: StudyResult): Record<string, unknown> {
+    const appt = r.appointment;
     return {
       id: r.id,
       findings: r.findings,
       conclusion: r.conclusion,
-      patient: { id: r.patient?.id, fullName: r.patient?.fullName, code: r.patient?.code },
-      doctor:  { id: r.doctor?.id,  fullName: r.doctor?.fullName  },
-      appointment: r.appointment ? { id: r.appointment.id, code: r.appointment.code } : null,
+      patient: {
+        id: r.patient?.id,
+        fullName: r.patient?.fullName,
+        code: r.patient?.code,
+      },
+      doctor: { id: r.doctor?.id, fullName: r.doctor?.fullName },
+      appointment: appt
+        ? {
+            id: appt.id,
+            code: appt.code,
+            scheduledDate: appt.scheduledDate,
+            duration: appt.duration,
+            reason: appt.reason,
+            notes: appt.notes,
+            studyType: appt.studyType
+              ? { id: appt.studyType.id, name: appt.studyType.name }
+              : null,
+          }
+        : null,
     };
   }
 }
