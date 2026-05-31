@@ -50,12 +50,15 @@ export class ActivitiesService {
     });
   }
 
-  findAllWithEmbeddings(types?: ActivityType[]): Promise<Activity[]> {
+  findAllWithEmbeddings(types?: ActivityType[], patientId?: string): Promise<Activity[]> {
     const qb = this.activityRepo
       .createQueryBuilder('a')
       .where('a.embedding IS NOT NULL');
     if (types?.length) {
       qb.andWhere('a.type IN (:...types)', { types });
+    }
+    if (patientId) {
+      qb.andWhere('a.patientId = :patientId', { patientId });
     }
     return qb.getMany();
   }

@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 import { ActivitiesService } from '../activities/activities.service';
 import { Activity, ActivityType } from '../activities/entities/activity.entity';
+import { User, UserRole } from '../users/entities/user.entity';
 
 export interface SearchResult {
   activity: Activity;
@@ -20,14 +21,18 @@ export class SearchService {
     this.openai = new OpenAI({ apiKey: this.config.get<string>('OPENAI_API_KEY') });
   }
 
-  async search(query: string, limit = 10): Promise<SearchResult[]> {
+  async search(query: string, currentUser: User, limit = 10): Promise<SearchResult[]> {
     const response = await this.openai.embeddings.create({
       model: 'text-embedding-3-small',
       input: query,
     });
     const queryEmbedding = response.data[0].embedding;
 
-    const activities = await this.activitiesService.findAllWithEmbeddings([ActivityType.RESULT_CREATED]);
+    const patientId = currentUser.role === UserRole.PATIENT ? currentUser.id : undefined;
+    const activities = await this.activitiesService.findAllWithEmbeddings(
+      [ActivityType.RESULT_CREATED],
+      patientId,
+    );
 
     return activities
       .map((activity) => ({

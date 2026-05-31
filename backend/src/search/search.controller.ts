@@ -1,5 +1,7 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { User } from '../users/entities/user.entity';
 import { SearchService } from './search.service';
 
 @ApiTags('search')
@@ -12,7 +14,11 @@ export class SearchController {
   @ApiQuery({ name: 'q', description: 'Natural language query in Spanish' })
   @ApiQuery({ name: 'limit', required: false, description: 'Max results (default 10)' })
   @Get()
-  search(@Query('q') q: string, @Query('limit') limit?: string) {
-    return this.searchService.search(q, limit ? parseInt(limit, 10) : 10);
+  search(
+    @Query('q') q: string,
+    @CurrentUser() currentUser: User,
+    @Query('limit') limit?: string,
+  ) {
+    return this.searchService.search(q, currentUser, limit ? parseInt(limit, 10) : 10);
   }
 }
