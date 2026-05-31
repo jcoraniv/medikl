@@ -10,7 +10,7 @@ export enum UserRole {
 
 @Entity('users')
 export class User extends CodedEntity {
-  @Column({ type: 'int', unique: true, default: () => "nextval('users_code_seq')" })
+  @Column({ type: 'int', unique: true })
   declare code: number;
 
   @Column({ unique: true })

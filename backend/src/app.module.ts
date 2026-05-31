@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { CodeSubscriber } from './common/subscribers/code.subscriber';
 import { ActivitiesModule } from './activities/activities.module';
 import { AppointmentsModule } from './appointments/appointments.module';
 import { AuthModule } from './auth/auth.module';
@@ -26,6 +27,7 @@ import { UsersModule } from './users/users.module';
         password: config.get('DB_PASS'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         migrations: [__dirname + '/migrations/*{.ts,.js}'],
+        subscribers: [CodeSubscriber],
         synchronize: false,
         logging: config.get('NODE_ENV') === 'development',
       }),
