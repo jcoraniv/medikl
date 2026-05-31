@@ -41,7 +41,7 @@ export function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle className="text-2xl">Medikt</CardTitle>
+          <CardTitle className="text-2xl">Medikl</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -49,14 +49,18 @@ export function LoginPage() {
               <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" {...register('email')} />
               {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
+                <p className="text-sm text-destructive">
+                  {errors.email.message}
+                </p>
               )}
             </div>
             <div className="space-y-1">
               <Label htmlFor="password">Contraseña</Label>
               <Input id="password" type="password" {...register('password')} />
               {errors.password && (
-                <p className="text-sm text-destructive">{errors.password.message}</p>
+                <p className="text-sm text-destructive">
+                  {errors.password.message}
+                </p>
               )}
             </div>
             {errors.root && (

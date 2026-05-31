@@ -28,12 +28,16 @@ async function bootstrap() {
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
   const config = new DocumentBuilder()
-    .setTitle('Medikt API')
+    .setTitle('Medikl API')
     .setDescription('Medical diagnosis clinic management system')
     .setVersion('1.0')
     .addBearerAuth()
     .build();
-  SwaggerModule.setup('api/docs', app, SwaggerModule.createDocument(app, config));
+  SwaggerModule.setup(
+    'api/docs',
+    app,
+    SwaggerModule.createDocument(app, config),
+  );
 
   await app.listen(process.env.PORT ?? 3000);
 }
