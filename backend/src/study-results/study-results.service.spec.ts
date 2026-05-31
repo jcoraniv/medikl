@@ -1,0 +1,231 @@
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { Appointment, AppointmentStatus } from '../appointments/entities/appointment.entity';
+import { User } from '../users/entities/user.entity';
+import { StudyResult, StudyResultStatus } from './entities/study-result.entity';
+import { StudyResultsService } from './study-results.service';
+
+const APPOINTMENT_ID = 'appt-uuid-1';
+const PATIENT_ID = 'patient-uuid-1';
+const DOCTOR_ID = 'doctor-uuid-1';
+const RESULT_ID = 'result-uuid-1';
+
+const mockAppointment: Partial<Appointment> = {
+  id: APPOINTMENT_ID,
+  patientId: PATIENT_ID,
+  doctorId: DOCTOR_ID,
+  status: AppointmentStatus.SCHEDULED,
+  studyType: null,
+};
+
+const mockResult: StudyResult = {
+  id: RESULT_ID,
+  appointmentId: APPOINTMENT_ID,
+  patientId: PATIENT_ID,
+  doctorId: DOCTOR_ID,
+  findings: 'Hallazgos dentro de parámetros normales',
+  conclusion: null,
+  status: StudyResultStatus.PENDING,
+  reviewedAt: null,
+  appointment: mockAppointment as Appointment,
+  patient: {} as User,
+  doctor: {} as User,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
+
+const resultRepo = {
+  find: jest.fn(),
+  findOne: jest.fn(),
+  create: jest.fn(),
+  save: jest.fn(),
+};
+
+const appointmentRepo = {
+  findOne: jest.fn(),
+  update: jest.fn(),
+};
+
+const userRepo = {};
+
+describe('StudyResultsService', () => {
+  let service: StudyResultsService;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        StudyResultsService,
+        { provide: getRepositoryToken(StudyResult), useValue: resultRepo },
+        { provide: getRepositoryToken(Appointment), useValue: appointmentRepo },
+        { provide: getRepositoryToken(User), useValue: userRepo },
+      ],
+    }).compile();
+
+    service = module.get<StudyResultsService>(StudyResultsService);
+    jest.clearAllMocks();
+  });
+
+  // ─── create ──────────────────────────────────────────────────────────────────
+
+  describe('create', () => {
+    const dto = { appointmentId: APPOINTMENT_ID, findings: 'Hallazgos dentro de parámetros normales' };
+
+    it('creates result and auto-completes a SCHEDULED appointment', async () => {
+      appointmentRepo.findOne.mockResolvedValue({ ...mockAppointment, status: AppointmentStatus.SCHEDULED });
+      resultRepo.findOne.mockResolvedValue(null);
+      resultRepo.create.mockReturnValue(mockResult);
+      resultRepo.save.mockResolvedValue(mockResult);
+      appointmentRepo.update.mockResolvedValue(undefined);
+
+      const result = await service.create(dto);
+
+      expect(result).toEqual(mockResult);
+      expect(appointmentRepo.update).toHaveBeenCalledWith(APPOINTMENT_ID, {
+        status: AppointmentStatus.COMPLETED,
+      });
+    });
+
+    it('creates result without re-completing an already COMPLETED appointment', async () => {
+      appointmentRepo.findOne.mockResolvedValue({ ...mockAppointment, status: AppointmentStatus.COMPLETED });
+      resultRepo.findOne.mockResolvedValue(null);
+      resultRepo.create.mockReturnValue(mockResult);
+      resultRepo.save.mockResolvedValue(mockResult);
+
+      await service.create(dto);
+
+      expect(appointmentRepo.update).not.toHaveBeenCalled();
+    });
+
+    it('throws NotFoundException when appointment does not exist', async () => {
+      appointmentRepo.findOne.mockResolvedValue(null);
+
+      await expect(service.create(dto)).rejects.toThrow(NotFoundException);
+    });
+
+    it('throws BadRequestException for a CANCELLED appointment', async () => {
+      appointmentRepo.findOne.mockResolvedValue({ ...mockAppointment, status: AppointmentStatus.CANCELLED });
+
+      await expect(service.create(dto)).rejects.toThrow(BadRequestException);
+    });
+
+    it('throws BadRequestException when result already exists for the appointment', async () => {
+      appointmentRepo.findOne.mockResolvedValue({ ...mockAppointment, status: AppointmentStatus.SCHEDULED });
+      resultRepo.findOne.mockResolvedValue(mockResult);
+
+      await expect(service.create(dto)).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  // ─── findAll ─────────────────────────────────────────────────────────────────
+
+  describe('findAll', () => {
+    it('returns all results when no filters are given', async () => {
+      resultRepo.find.mockResolvedValue([mockResult]);
+
+      const results = await service.findAll();
+
+      expect(results).toEqual([mockResult]);
+      expect(resultRepo.find).toHaveBeenCalledWith(
+        expect.objectContaining({ where: {} }),
+      );
+    });
+
+    it('applies patientId filter', async () => {
+      resultRepo.find.mockResolvedValue([mockResult]);
+
+      await service.findAll(PATIENT_ID);
+
+      expect(resultRepo.find).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { patientId: PATIENT_ID } }),
+      );
+    });
+
+    it('applies combined filters', async () => {
+      resultRepo.find.mockResolvedValue([mockResult]);
+
+      await service.findAll(PATIENT_ID, DOCTOR_ID, APPOINTMENT_ID);
+
+      expect(resultRepo.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { patientId: PATIENT_ID, doctorId: DOCTOR_ID, appointmentId: APPOINTMENT_ID },
+        }),
+      );
+    });
+  });
+
+  // ─── findOne ─────────────────────────────────────────────────────────────────
+
+  describe('findOne', () => {
+    it('returns the result when found', async () => {
+      resultRepo.findOne.mockResolvedValue(mockResult);
+
+      const result = await service.findOne(RESULT_ID);
+
+      expect(result).toEqual(mockResult);
+    });
+
+    it('throws NotFoundException when result does not exist', async () => {
+      resultRepo.findOne.mockResolvedValue(null);
+
+      await expect(service.findOne('nonexistent')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ─── findByAppointment ───────────────────────────────────────────────────────
+
+  describe('findByAppointment', () => {
+    it('returns results for the given appointmentId', async () => {
+      resultRepo.find.mockResolvedValue([mockResult]);
+
+      const results = await service.findByAppointment(APPOINTMENT_ID);
+
+      expect(results).toEqual([mockResult]);
+      expect(resultRepo.find).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { appointmentId: APPOINTMENT_ID } }),
+      );
+    });
+  });
+
+  // ─── update ──────────────────────────────────────────────────────────────────
+
+  describe('update', () => {
+    it('updates findings and returns the modified result', async () => {
+      const pending = { ...mockResult, status: StudyResultStatus.PENDING };
+      resultRepo.findOne.mockResolvedValue(pending);
+      resultRepo.save.mockImplementation((r) => Promise.resolve(r));
+
+      const result = await service.update(RESULT_ID, { findings: 'Nuevos hallazgos actualizados' });
+
+      expect(result.findings).toBe('Nuevos hallazgos actualizados');
+    });
+
+    it('throws BadRequestException when result is already REVIEWED', async () => {
+      resultRepo.findOne.mockResolvedValue({ ...mockResult, status: StudyResultStatus.REVIEWED });
+
+      await expect(service.update(RESULT_ID, { findings: 'Intento de edición' }))
+        .rejects.toThrow(BadRequestException);
+    });
+  });
+
+  // ─── review ──────────────────────────────────────────────────────────────────
+
+  describe('review', () => {
+    it('sets status to REVIEWED and stamps reviewedAt', async () => {
+      const pending = { ...mockResult, status: StudyResultStatus.PENDING, reviewedAt: null };
+      resultRepo.findOne.mockResolvedValue(pending);
+      resultRepo.save.mockImplementation((r) => Promise.resolve(r));
+
+      const result = await service.review(RESULT_ID);
+
+      expect(result.status).toBe(StudyResultStatus.REVIEWED);
+      expect(result.reviewedAt).toBeInstanceOf(Date);
+    });
+
+    it('throws BadRequestException when result is already REVIEWED', async () => {
+      resultRepo.findOne.mockResolvedValue({ ...mockResult, status: StudyResultStatus.REVIEWED });
+
+      await expect(service.review(RESULT_ID)).rejects.toThrow(BadRequestException);
+    });
+  });
+});
