@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Calendar, FlaskConical, FileText, Search, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Calendar, FlaskConical, FileText, Search, ClipboardList, LogOut, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/authStore';
 
@@ -9,7 +9,8 @@ const navItems = [
   { to: '/appointments',  label: 'Appointments',    icon: Calendar },
   { to: '/study-types',   label: 'Study Types',     icon: FlaskConical,  roles: ['admin', 'doctor'] },
   { to: '/study-results', label: 'Study Results',   icon: FileText },
-  { to: '/search',        label: 'Semantic Search', icon: Search },
+  { to: '/search',            label: 'Semantic Search',  icon: Search },
+  { to: '/clinical-history',  label: 'Clinical History', icon: ClipboardList, roles: ['admin', 'doctor'] },
 ];
 
 interface SidebarProps {

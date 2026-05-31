@@ -8,6 +8,7 @@ import { AppointmentOverviewPage } from '@/pages/AppointmentOverviewPage';
 import { StudyTypesPage } from '@/pages/StudyTypesPage';
 import { StudyResultsPage } from '@/pages/StudyResultsPage';
 import { SemanticSearchPage } from '@/pages/SemanticSearchPage';
+import { ClinicalHistoryPage } from '@/pages/ClinicalHistoryPage';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
           <Route path="/study-types" element={<StudyTypesPage />} />
           <Route path="/study-results" element={<StudyResultsPage />} />
           <Route path="/search" element={<SemanticSearchPage />} />
+          <Route path="/clinical-history" element={<ClinicalHistoryPage />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Route>

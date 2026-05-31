@@ -6,6 +6,7 @@ import { CodeSubscriber } from './common/subscribers/code.subscriber';
 import { ActivitiesModule } from './activities/activities.module';
 import { AppointmentsModule } from './appointments/appointments.module';
 import { AuthModule } from './auth/auth.module';
+import { ClinicalHistoryModule } from './clinical-history/clinical-history.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { SearchModule } from './search/search.module';
 import { StudyResultsModule } from './study-results/study-results.module';
@@ -35,6 +36,7 @@ import { UsersModule } from './users/users.module';
     ActivitiesModule,
     AppointmentsModule,
     AuthModule,
+    ClinicalHistoryModule,
     DashboardModule,
     SearchModule,
     StudyResultsModule,

@@ -148,4 +148,44 @@ export const handlers = [
     return HttpResponse.json({ ...mockStudyResults[0], id: params.id, ...body });
   }),
 
+  http.get(`${API_BASE_URL}/clinical-history/:code`, ({ params }) => {
+    if (params.code === '999') {
+      return HttpResponse.json({ message: 'Patient not found' }, { status: 404 });
+    }
+    return HttpResponse.json({
+      patient: { id: 'patient-uuid', code: Number(params.code), fullName: 'Carlos López', email: 'carlos@test.com' },
+      appointments: [
+        {
+          id: 'appt-uuid-1',
+          code: 1,
+          scheduledDate: '2026-06-01T10:00:00Z',
+          duration: 30,
+          status: 'completed',
+          reason: 'Routine check',
+          notes: null,
+          doctor: { id: 'doctor-uuid', fullName: 'Dra. García' },
+          studyType: { id: 'st-uuid-1', name: 'Ecografía abdominal' },
+          studyResult: {
+            id: 'result-uuid-1',
+            findings: 'Sin hallazgos patológicos',
+            conclusion: 'Normal',
+            createdAt: '2026-06-01T12:00:00Z',
+          },
+        },
+        {
+          id: 'appt-uuid-2',
+          code: 2,
+          scheduledDate: '2026-05-15T09:00:00Z',
+          duration: 45,
+          status: 'scheduled',
+          reason: null,
+          notes: null,
+          doctor: { id: 'doctor-uuid', fullName: 'Dra. García' },
+          studyType: null,
+          studyResult: null,
+        },
+      ],
+    });
+  }),
+
 ];
