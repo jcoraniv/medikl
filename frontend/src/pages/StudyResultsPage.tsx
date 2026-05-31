@@ -237,7 +237,7 @@ export function StudyResultsPage() {
           <table className="w-full">
             <thead className="border-b bg-muted/50">
               <tr>
-                {['Patient', 'Doctor', 'Study Type', 'Findings', ...(canWrite ? [''] : [])].map((h) => (
+                {['Patient', 'Doctor', 'Appt #', 'Study Type', 'Findings', ...(canWrite ? [''] : [])].map((h) => (
                   <th key={h} className="py-3 pr-4 text-left text-xs font-medium text-muted-foreground uppercase">
                     {h}
                   </th>
@@ -247,8 +247,14 @@ export function StudyResultsPage() {
             <tbody>
               {results.map((r) => (
                 <tr key={r.id} className="border-b last:border-0">
-                  <td className="py-3 pr-4 text-sm font-medium">{r.patient.fullName}</td>
+                  <td className="py-3 pr-4 text-sm font-medium">
+                    <span>{r.patient.fullName}</span>
+                    <span className="ml-1 text-xs text-muted-foreground font-mono">HC-{r.patient.code}</span>
+                  </td>
                   <td className="py-3 pr-4 text-sm text-muted-foreground">{r.doctor.fullName}</td>
+                  <td className="py-3 pr-4 text-xs font-mono text-muted-foreground">
+                    #{r.appointment?.code ?? '—'}
+                  </td>
                   <td className="py-3 pr-4 text-sm text-muted-foreground">
                     {r.appointment?.studyType?.name ?? '—'}
                   </td>

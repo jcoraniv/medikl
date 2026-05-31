@@ -3,6 +3,7 @@ import { API_BASE_URL } from '@/lib/config';
 
 const mockUser = {
   id: 'uuid-123',
+  code: 1,
   email: 'test@example.com',
   fullName: 'Test User',
   role: 'patient',
@@ -16,10 +17,11 @@ export const mockStudyTypes = [
 export const mockAppointments = [
   {
     id: 'appt-uuid-1',
+    code: 1,
     patientId: 'patient-uuid',
-    patient: { id: 'patient-uuid', email: 'patient@test.com', fullName: 'Carlos López', role: 'patient' },
+    patient: { id: 'patient-uuid', code: 1, email: 'patient@test.com', fullName: 'Carlos López', role: 'patient' },
     doctorId: 'doctor-uuid',
-    doctor: { id: 'doctor-uuid', email: 'doctor@test.com', fullName: 'Dra. García', role: 'doctor' },
+    doctor: { id: 'doctor-uuid', code: 2, email: 'doctor@test.com', fullName: 'Dra. García', role: 'doctor' },
     studyTypeId: null,
     studyType: null,
     scheduledDate: '2026-06-01T10:00:00Z',
@@ -41,9 +43,9 @@ export const mockStudyResults = [
       studyType: mockStudyTypes[0],
     },
     patientId: 'patient-uuid',
-    patient: { id: 'patient-uuid', email: 'patient@test.com', fullName: 'Carlos López', role: 'patient' },
+    patient: { id: 'patient-uuid', code: 1, email: 'patient@test.com', fullName: 'Carlos López', role: 'patient' },
     doctorId: 'doctor-uuid',
-    doctor: { id: 'doctor-uuid', email: 'doctor@test.com', fullName: 'Dra. García', role: 'doctor' },
+    doctor: { id: 'doctor-uuid', code: 2, email: 'doctor@test.com', fullName: 'Dra. García', role: 'doctor' },
     findings: 'Hallazgos dentro de parámetros normales para la edad del paciente',
     conclusion: null,
     createdAt: '2026-05-30T00:00:00Z',

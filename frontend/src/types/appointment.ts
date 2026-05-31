@@ -12,6 +12,7 @@ export interface StudyType {
 
 export interface Appointment {
   id: string;
+  code: number;
   patientId: string;
   patient: User;
   doctorId: string;

@@ -33,7 +33,11 @@ function AppointmentRow({
 
   return (
     <tr className="border-b last:border-0">
-      <td className="py-3 pr-4 text-sm">{appointment.patient?.fullName ?? '—'}</td>
+      <td className="py-3 pr-4 text-xs font-mono text-muted-foreground">#{appointment.code}</td>
+      <td className="py-3 pr-4 text-sm">
+        <span>{appointment.patient?.fullName ?? '—'}</span>
+        <span className="ml-1 text-xs text-muted-foreground font-mono">HC-{appointment.patient?.code}</span>
+      </td>
       <td className="py-3 pr-4 text-sm">{appointment.doctor?.fullName ?? '—'}</td>
       <td className="py-3 pr-4 text-sm">{appointment.studyType?.name ?? '—'}</td>
       <td className="py-3 pr-4 text-sm">
@@ -119,7 +123,7 @@ export function AppointmentsPage() {
           <table className="w-full">
             <thead className="border-b bg-muted/50">
               <tr>
-                {['Patient', 'Doctor', 'Study type', 'Date', 'Status', ''].map((h) => (
+                {['#', 'Patient', 'Doctor', 'Study type', 'Date', 'Status', ''].map((h) => (
                   <th key={h} className="py-3 pr-4 text-left text-xs font-medium text-muted-foreground uppercase">
                     {h}
                   </th>
