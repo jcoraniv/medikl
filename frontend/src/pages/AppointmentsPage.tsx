@@ -1,9 +1,16 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Loader2, FileText } from 'lucide-react';
+import { Plus, Loader2, FileText, CheckCircle, XCircle, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 import { appointmentsService } from '@/services/appointmentsService';
 import { useAuthStore } from '@/store/authStore';
 import type { Appointment, AppointmentStatus } from '@/types/appointment';
@@ -31,7 +38,9 @@ function AppointmentRow({
   onComplete: (id: string) => void;
   onEmitResult: (appointment: Appointment) => void;
 }) {
-  const canEmit = canWrite && (appointment.status === 'scheduled' || appointment.status === 'completed');
+  const isScheduled = appointment.status === 'scheduled';
+  const canEmit = canWrite && (isScheduled || appointment.status === 'completed');
+  const hasActions = canWrite && (isScheduled || canEmit);
 
   return (
     <tr className="border-b last:border-0">
@@ -51,29 +60,40 @@ function AppointmentRow({
         <Badge className={STATUS_STYLES[appointment.status]}>{appointment.status}</Badge>
       </td>
       <td className="py-3 text-right">
-        <div className="flex justify-end gap-2">
-          {appointment.status === 'scheduled' && (
-            <>
-              <Button size="sm" variant="outline" onClick={() => onComplete(appointment.id)}>
-                Complete
+        {hasActions && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                <MoreHorizontal size={16} />
+                <span className="sr-only">Open menu</span>
               </Button>
-              <Button size="sm" variant="ghost" onClick={() => onCancel(appointment.id)}>
-                Cancel
-              </Button>
-            </>
-          )}
-          {canEmit && (
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => onEmitResult(appointment)}
-              className="gap-1"
-            >
-              <FileText size={13} />
-              Emit result
-            </Button>
-          )}
-        </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {canEmit && (
+                <DropdownMenuItem onClick={() => onEmitResult(appointment)}>
+                  <FileText />
+                  Emit result
+                </DropdownMenuItem>
+              )}
+              {isScheduled && canEmit && <DropdownMenuSeparator />}
+              {isScheduled && (
+                <>
+                  <DropdownMenuItem onClick={() => onComplete(appointment.id)}>
+                    <CheckCircle />
+                    Complete
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => onCancel(appointment.id)}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <XCircle />
+                    Cancel
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </td>
     </tr>
   );
@@ -152,7 +172,6 @@ export function AppointmentsPage() {
         </div>
       )}
 
-      {/* New appointment dialog */}
       <Dialog open={newOpen} onOpenChange={setNewOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
@@ -168,7 +187,6 @@ export function AppointmentsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Emit result dialog */}
       <Dialog open={resultAppointment !== null} onOpenChange={(open) => !open && setResultAppointment(null)}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>

@@ -9,7 +9,7 @@ import { mockAppointments } from '@/test/mocks/handlers';
 import { useAuthStore } from '@/store/authStore';
 import { AppointmentsPage } from './AppointmentsPage';
 
-const ADMIN_USER = { id: 'u1', code: 99, email: 'admin@test.com', fullName: 'Admin', role: 'admin' as const };
+const ADMIN_USER  = { id: 'u1', code: 99, email: 'admin@test.com',  fullName: 'Admin',       role: 'admin'  as const };
 const DOCTOR_USER = { id: 'doctor-uuid', code: 2, email: 'doctor@test.com', fullName: 'Dra. García', role: 'doctor' as const };
 
 function renderPage() {
@@ -58,25 +58,47 @@ describe('AppointmentsPage', () => {
     expect(screen.getByRole('heading', { name: 'New appointment' })).toBeInTheDocument();
   });
 
-  it('shows complete and cancel buttons for scheduled appointments', async () => {
+  // ─── Three-dots menu ──────────────────────────────────────────────────────
+
+  it('shows the three-dots menu button for scheduled appointments', async () => {
     renderPage();
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /complete/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument();
-    });
+    await screen.findByText('Carlos López');
+    expect(screen.getByRole('button', { name: /open menu/i })).toBeInTheDocument();
   });
 
-  it('does not show action buttons for completed appointments', async () => {
+  it('reveals Complete, Cancel and Emit result options on menu open', async () => {
+    renderPage();
+    await screen.findByText('Carlos López');
+    await userEvent.click(screen.getByRole('button', { name: /open menu/i }));
+    expect(await screen.findByRole('menuitem', { name: /complete/i })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: /cancel/i })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: /emit result/i })).toBeInTheDocument();
+  });
+
+  it('does not show three-dots menu for completed appointments', async () => {
     server.use(
       http.get('http://localhost:3000/api/appointments', () =>
         HttpResponse.json([{ ...mockAppointments[0], status: 'completed' }]),
       ),
     );
     renderPage();
-    await waitFor(() => {
-      expect(screen.queryByRole('button', { name: /complete/i })).not.toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: /cancel/i })).not.toBeInTheDocument();
-    });
+    await screen.findByText('Carlos López');
+    // completed appointments still show Emit result — menu is visible but no Complete/Cancel
+    await userEvent.click(screen.getByRole('button', { name: /open menu/i }));
+    expect(await screen.findByRole('menuitem', { name: /emit result/i })).toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: /complete/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: /cancel/i })).not.toBeInTheDocument();
+  });
+
+  it('hides three-dots menu entirely for cancelled appointments', async () => {
+    server.use(
+      http.get('http://localhost:3000/api/appointments', () =>
+        HttpResponse.json([{ ...mockAppointments[0], status: 'cancelled' }]),
+      ),
+    );
+    renderPage();
+    await screen.findByText('Carlos López');
+    expect(screen.queryByRole('button', { name: /open menu/i })).not.toBeInTheDocument();
   });
 
   // ─── Doctor column visibility ─────────────────────────────────────────────
