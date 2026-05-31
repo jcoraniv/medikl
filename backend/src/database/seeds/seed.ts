@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { DataSource, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import * as dotenv from 'dotenv';
+import { BCRYPT_ROUNDS, DEFAULT_LOCALE } from '../../common/constants/app.constants';
 import { User, UserRole } from '../../users/entities/user.entity';
 import { StudyType } from '../../study-types/entities/study-type.entity';
 import { Appointment, AppointmentStatus } from '../../appointments/entities/appointment.entity';
@@ -49,7 +50,7 @@ async function upsertUser(
     console.log(`  [skip] ${data.email}`);
     return existing;
   }
-  const passwordHash = await bcrypt.hash(data.password, 10);
+  const passwordHash = await bcrypt.hash(data.password, BCRYPT_ROUNDS);
   const user = await repo.save(repo.create({ ...data, passwordHash }));
   console.log(`  [ok]   ${data.email} (${data.role}) — HC-${user.code}`);
   return user;
@@ -349,11 +350,19 @@ function buildAppointmentSnapshot(a: Appointment): Record<string, unknown> {
 function buildResultSnapshot(r: StudyResult, a: Appointment): Record<string, unknown> {
   return {
     id: r.id,
-    findings: r.findings,
+    findings:   r.findings,
     conclusion: r.conclusion,
     patient: { id: a.patient.id, fullName: a.patient.fullName, code: a.patient.code },
     doctor:  { id: a.doctor.id,  fullName: a.doctor.fullName },
-    appointment: { id: a.id, code: a.code },
+    appointment: {
+      id:            a.id,
+      code:          a.code,
+      scheduledDate: a.scheduledDate,
+      duration:      a.duration,
+      reason:        a.reason,
+      notes:         a.notes,
+      studyType: a.studyType ? { id: a.studyType.id, name: a.studyType.name } : null,
+    },
   };
 }
 
@@ -361,7 +370,7 @@ function appointmentText(type: ActivityType, a: Appointment): string {
   const p = `${a.patient.fullName} (HC-${a.patient.code})`;
   const d = a.doctor.fullName;
   const st = a.studyType?.name;
-  const date = new Date(a.scheduledDate).toLocaleString('es-BO');
+  const date = new Date(a.scheduledDate).toLocaleString(DEFAULT_LOCALE);
 
   switch (type) {
     case ActivityType.APPOINTMENT_SCHEDULED:
@@ -376,8 +385,15 @@ function appointmentText(type: ActivityType, a: Appointment): string {
 }
 
 function resultText(r: StudyResult, a: Appointment): string {
-  const p = `${a.patient.fullName} (HC-${a.patient.code})`;
-  return `Resultado clínico registrado para ${p} por ${a.doctor.fullName}. Hallazgos: ${r.findings}${r.conclusion ? `. Conclusión: ${r.conclusion}` : ''}.`;
+  const p  = `${a.patient.fullName} (HC-${a.patient.code})`;
+  const st = a.studyType?.name;
+  let text = `Resultado clínico registrado para ${p} por ${a.doctor.fullName}`;
+  if (st)           text += `. Estudio: ${st}`;
+  if (a.reason)     text += `. Motivo: ${a.reason}`;
+  if (a.notes)      text += `. Notas: ${a.notes}`;
+  text += `. Hallazgos: ${r.findings}`;
+  if (r.conclusion) text += `. Conclusión: ${r.conclusion}`;
+  return text + '.';
 }
 
 async function seedActivities(
