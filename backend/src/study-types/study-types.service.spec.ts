@@ -10,6 +10,7 @@ const mockStudyType: StudyType = {
   description: 'Examen abdominal',
   duration: 30,
   address: 'Clínica del Valle',
+  deletedAt: null,
   createdAt: new Date(),
   updatedAt: new Date(),
 };
@@ -19,7 +20,7 @@ const mockRepo = {
   findOne: jest.fn(),
   create: jest.fn(),
   save: jest.fn(),
-  remove: jest.fn(),
+  softDelete: jest.fn(),
 };
 
 describe('StudyTypesService', () => {
@@ -100,12 +101,12 @@ describe('StudyTypesService', () => {
   });
 
   describe('remove', () => {
-    it('removes the study type', async () => {
+    it('soft-deletes the study type', async () => {
       mockRepo.findOne.mockResolvedValue(mockStudyType);
-      mockRepo.remove.mockResolvedValue(undefined);
+      mockRepo.softDelete.mockResolvedValue(undefined);
 
       await expect(service.remove('st-uuid')).resolves.toBeUndefined();
-      expect(mockRepo.remove).toHaveBeenCalledWith(mockStudyType);
+      expect(mockRepo.softDelete).toHaveBeenCalledWith('st-uuid');
     });
 
     it('throws NotFoundException when study type does not exist', async () => {

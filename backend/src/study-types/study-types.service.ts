@@ -39,7 +39,7 @@ export class StudyTypesService {
   }
 
   async remove(id: string): Promise<void> {
-    const st = await this.findOne(id);
-    await this.repo.remove(st);
+    await this.findOne(id);
+    await this.repo.softDelete(id);
   }
 }

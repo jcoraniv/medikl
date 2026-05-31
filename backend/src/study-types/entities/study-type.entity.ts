@@ -1,4 +1,4 @@
-import { Column, Entity } from 'typeorm';
+import { Column, DeleteDateColumn, Entity } from 'typeorm';
 import { BaseEntity } from '../../common/entities/base.entity';
 
 @Entity('study_types')
@@ -14,4 +14,7 @@ export class StudyType extends BaseEntity {
 
   @Column({ type: 'text', nullable: true })
   address: string | null;
+
+  @DeleteDateColumn()
+  deletedAt: Date | null;
 }

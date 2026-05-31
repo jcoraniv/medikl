@@ -8,6 +8,7 @@ export interface StudyType {
   description: string | null;
   duration: number;
   address: string | null;
+  deletedAt: string | null;
 }
 
 export interface Appointment {
