@@ -219,7 +219,7 @@ export function StudyTypesPage() {
                 ].map((h) => (
                   <th
                     key={h}
-                    className="py-3 pr-4 text-left text-xs font-medium text-muted-foreground uppercase"
+                    className="py-3 px-4 text-left text-xs font-medium text-muted-foreground uppercase"
                   >
                     {h}
                   </th>
@@ -229,16 +229,16 @@ export function StudyTypesPage() {
             <tbody>
               {studyTypes.map((st) => (
                 <tr key={st.id} className="border-b last:border-0">
-                  <td className="py-3 pr-4 text-sm font-medium">{st.name}</td>
-                  <td className="py-3 pr-4 text-sm text-muted-foreground">
+                  <td className="py-3 px-4 text-sm font-medium">{st.name}</td>
+                  <td className="py-3 px-4 text-sm text-muted-foreground">
                     {st.description ?? '—'}
                   </td>
-                  <td className="py-3 pr-4 text-sm text-muted-foreground">
+                  <td className="py-3 px-4 text-sm text-muted-foreground">
                     {st.address ?? '—'}
                   </td>
-                  <td className="py-3 pr-4 text-sm">{st.duration} min</td>
+                  <td className="py-3 px-4 text-sm">{st.duration} min</td>
                   {showActionsColumn && (
-                    <td className="py-3 text-right">
+                    <td className="py-3 px-4 text-right">
                       <div className="flex justify-end gap-1">
                         {isAdmin && (
                           <Button

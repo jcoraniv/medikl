@@ -243,7 +243,7 @@ export function StudyResultsPage() {
             <thead className="border-b bg-muted/50">
               <tr>
                 {['Patient', 'Doctor', 'Appt #', 'Study Type', 'Findings', ...(canWrite ? [''] : [])].map((h) => (
-                  <th key={h} className="py-3 pr-4 text-left text-xs font-medium text-muted-foreground uppercase">
+                  <th key={h} className="py-3 px-4 text-left text-xs font-medium text-muted-foreground uppercase">
                     {h}
                   </th>
                 ))}
@@ -252,22 +252,22 @@ export function StudyResultsPage() {
             <tbody>
               {results.map((r) => (
                 <tr key={r.id} className="border-b last:border-0">
-                  <td className="py-3 pr-4 text-sm font-medium">
+                  <td className="py-3 px-4 text-sm font-medium">
                     <span>{r.patient.fullName}</span>
                     <span className="ml-1 text-xs text-muted-foreground font-mono">HC-{r.patient.code}</span>
                   </td>
-                  <td className="py-3 pr-4 text-sm text-muted-foreground">{r.doctor.fullName}</td>
-                  <td className="py-3 pr-4 text-xs font-mono text-muted-foreground">
+                  <td className="py-3 px-4 text-sm text-muted-foreground">{r.doctor.fullName}</td>
+                  <td className="py-3 px-4 text-xs font-mono text-muted-foreground">
                     #{r.appointment?.code ?? '—'}
                   </td>
-                  <td className="py-3 pr-4 text-sm text-muted-foreground">
+                  <td className="py-3 px-4 text-sm text-muted-foreground">
                     {r.appointment?.studyType?.name ?? '—'}
                   </td>
-                  <td className="py-3 pr-4 text-sm max-w-xs truncate" title={r.findings}>
+                  <td className="py-3 px-4 text-sm max-w-xs truncate" title={r.findings}>
                     {r.findings.length > 60 ? `${r.findings.slice(0, 60)}…` : r.findings}
                   </td>
                   {canWrite && (
-                    <td className="py-3 text-right">
+                    <td className="py-3 px-4 text-right">
                       <Button
                         size="sm"
                         variant="ghost"

@@ -45,22 +45,22 @@ function AppointmentRow({
 
   return (
     <tr className="border-b last:border-0">
-      <td className="py-3 pr-4 text-xs font-mono text-muted-foreground">#{appointment.code}</td>
-      <td className="py-3 pr-4 text-sm">
+      <td className="py-3 px-4 text-xs font-mono text-muted-foreground">#{appointment.code}</td>
+      <td className="py-3 px-4 text-sm">
         <span>{appointment.patient?.fullName ?? '—'}</span>
         <span className="ml-1 text-xs text-muted-foreground font-mono">HC-{appointment.patient?.code}</span>
       </td>
       {showDoctor && (
-        <td className="py-3 pr-4 text-sm">{appointment.doctor?.fullName ?? '—'}</td>
+        <td className="py-3 px-4 text-sm">{appointment.doctor?.fullName ?? '—'}</td>
       )}
-      <td className="py-3 pr-4 text-sm">{appointment.studyType?.name ?? '—'}</td>
-      <td className="py-3 pr-4 text-sm">
+      <td className="py-3 px-4 text-sm">{appointment.studyType?.name ?? '—'}</td>
+      <td className="py-3 px-4 text-sm">
         {new Date(appointment.scheduledDate).toLocaleString()}
       </td>
-      <td className="py-3 pr-4">
+      <td className="py-3 px-4">
         <Badge className={STATUS_STYLES[appointment.status]}>{appointment.status}</Badge>
       </td>
-      <td className="py-3 text-right">
+      <td className="py-3 px-4 text-right">
         {hasActions && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -159,7 +159,7 @@ export function AppointmentsPage() {
             <thead className="border-b bg-muted/50">
               <tr>
                 {['#', 'Patient', ...(showDoctor ? ['Doctor'] : []), 'Study type', 'Date', 'Status', ''].map((h) => (
-                  <th key={h} className="py-3 pr-4 text-left text-xs font-medium text-muted-foreground uppercase">
+                  <th key={h} className="py-3 px-4 text-left text-xs font-medium text-muted-foreground uppercase">
                     {h}
                   </th>
                 ))}
