@@ -1,6 +1,7 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { ActivitiesService } from '../activities/activities.service';
 import { Appointment, AppointmentStatus } from '../appointments/entities/appointment.entity';
 import { User } from '../users/entities/user.entity';
 import { StudyResult } from './entities/study-result.entity';
@@ -48,6 +49,8 @@ const appointmentRepo = {
 
 const userRepo = {};
 
+const mockActivitiesService = { createActivity: jest.fn() };
+
 describe('StudyResultsService', () => {
   let service: StudyResultsService;
 
@@ -58,6 +61,7 @@ describe('StudyResultsService', () => {
         { provide: getRepositoryToken(StudyResult), useValue: resultRepo },
         { provide: getRepositoryToken(Appointment), useValue: appointmentRepo },
         { provide: getRepositoryToken(User), useValue: userRepo },
+        { provide: ActivitiesService, useValue: mockActivitiesService },
       ],
     }).compile();
 
@@ -72,7 +76,9 @@ describe('StudyResultsService', () => {
 
     it('creates result and auto-completes a SCHEDULED appointment', async () => {
       appointmentRepo.findOne.mockResolvedValue({ ...mockAppointment, status: AppointmentStatus.SCHEDULED });
-      resultRepo.findOne.mockResolvedValue(null);
+      resultRepo.findOne
+        .mockResolvedValueOnce(null)       // duplicate check
+        .mockResolvedValue(mockResult);    // findOne after save
       resultRepo.create.mockReturnValue(mockResult);
       resultRepo.save.mockResolvedValue(mockResult);
       appointmentRepo.update.mockResolvedValue(undefined);
@@ -83,11 +89,14 @@ describe('StudyResultsService', () => {
       expect(appointmentRepo.update).toHaveBeenCalledWith(APPOINTMENT_ID, {
         status: AppointmentStatus.COMPLETED,
       });
+      expect(mockActivitiesService.createActivity).toHaveBeenCalled();
     });
 
     it('creates result without re-completing an already COMPLETED appointment', async () => {
       appointmentRepo.findOne.mockResolvedValue({ ...mockAppointment, status: AppointmentStatus.COMPLETED });
-      resultRepo.findOne.mockResolvedValue(null);
+      resultRepo.findOne
+        .mockResolvedValueOnce(null)
+        .mockResolvedValue(mockResult);
       resultRepo.create.mockReturnValue(mockResult);
       resultRepo.save.mockResolvedValue(mockResult);
 
@@ -190,12 +199,16 @@ describe('StudyResultsService', () => {
 
   describe('update', () => {
     it('updates findings and returns the modified result', async () => {
-      resultRepo.findOne.mockResolvedValue({ ...mockResult });
+      const updated = { ...mockResult, findings: 'Nuevos hallazgos actualizados' };
+      resultRepo.findOne
+        .mockResolvedValueOnce({ ...mockResult })  // findOne inside update
+        .mockResolvedValue(updated);               // findOne after save
       resultRepo.save.mockImplementation((r) => Promise.resolve(r));
 
       const result = await service.update(RESULT_ID, { findings: 'Nuevos hallazgos actualizados' });
 
       expect(result.findings).toBe('Nuevos hallazgos actualizados');
+      expect(mockActivitiesService.createActivity).toHaveBeenCalled();
     });
 
     it('throws NotFoundException when result does not exist', async () => {

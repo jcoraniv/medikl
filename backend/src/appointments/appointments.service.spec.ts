@@ -1,6 +1,7 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { ActivitiesService } from '../activities/activities.service';
 import { User, UserRole } from '../users/entities/user.entity';
 import { AppointmentsService } from './appointments.service';
 import { Appointment, AppointmentStatus } from './entities/appointment.entity';
@@ -56,6 +57,10 @@ const mockUserRepo = {
   findOne: jest.fn(),
 };
 
+const mockActivitiesService = {
+  createActivity: jest.fn(),
+};
+
 describe('AppointmentsService', () => {
   let service: AppointmentsService;
 
@@ -65,6 +70,7 @@ describe('AppointmentsService', () => {
         AppointmentsService,
         { provide: getRepositoryToken(Appointment), useValue: mockAppointmentRepo },
         { provide: getRepositoryToken(User), useValue: mockUserRepo },
+        { provide: ActivitiesService, useValue: mockActivitiesService },
       ],
     }).compile();
 
@@ -79,6 +85,7 @@ describe('AppointmentsService', () => {
         .mockResolvedValueOnce(mockDoctor);
       mockAppointmentRepo.create.mockReturnValue(mockAppointment);
       mockAppointmentRepo.save.mockResolvedValue(mockAppointment);
+      mockAppointmentRepo.findOne.mockResolvedValue(mockAppointment); // for findOne after save
 
       const result = await service.create({
         patientId: mockPatient.id,
@@ -89,6 +96,7 @@ describe('AppointmentsService', () => {
 
       expect(result).toEqual(mockAppointment);
       expect(mockAppointmentRepo.save).toHaveBeenCalled();
+      expect(mockActivitiesService.createActivity).toHaveBeenCalled();
     });
 
     it('throws NotFoundException when patient does not exist', async () => {

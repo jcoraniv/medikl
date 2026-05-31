@@ -6,6 +6,7 @@ import { DashboardPage } from '@/pages/DashboardPage';
 import { AppointmentsPage } from '@/pages/AppointmentsPage';
 import { StudyTypesPage } from '@/pages/StudyTypesPage';
 import { StudyResultsPage } from '@/pages/StudyResultsPage';
+import { SemanticSearchPage } from '@/pages/SemanticSearchPage';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
           <Route path="/appointments" element={<AppointmentsPage />} />
           <Route path="/study-types" element={<StudyTypesPage />} />
           <Route path="/study-results" element={<StudyResultsPage />} />
+          <Route path="/search" element={<SemanticSearchPage />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Route>

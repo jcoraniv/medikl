@@ -1,6 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ActivitiesService } from '../activities/activities.service';
+import { ActivityType } from '../activities/entities/activity.entity';
 import { Appointment, AppointmentStatus } from '../appointments/entities/appointment.entity';
 import { User } from '../users/entities/user.entity';
 import { CreateStudyResultDto } from './dto/create-study-result.dto';
@@ -16,6 +18,7 @@ export class StudyResultsService {
     private readonly appointmentRepo: Repository<Appointment>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+    private readonly activitiesService: ActivitiesService,
   ) {}
 
   async create(dto: CreateStudyResultDto): Promise<StudyResult> {
@@ -45,7 +48,16 @@ export class StudyResultsService {
       await this.appointmentRepo.update(appointment.id, { status: AppointmentStatus.COMPLETED });
     }
 
-    return result;
+    const fullResult = await this.findOne(result.id);
+    this.activitiesService.createActivity({
+      type: ActivityType.RESULT_CREATED,
+      patientId: appointment.patientId,
+      entityId: result.id,
+      entityType: 'StudyResult',
+      snapshot: this.buildSnapshot(fullResult),
+    });
+
+    return fullResult;
   }
 
   findAll(patientId?: string, doctorId?: string, appointmentId?: string): Promise<StudyResult[]> {
@@ -80,6 +92,28 @@ export class StudyResultsService {
   async update(id: string, dto: UpdateStudyResultDto): Promise<StudyResult> {
     const result = await this.findOne(id);
     Object.assign(result, dto);
-    return this.resultRepo.save(result);
+    const saved = await this.resultRepo.save(result);
+    const full  = await this.findOne(saved.id);
+
+    this.activitiesService.createActivity({
+      type: ActivityType.RESULT_UPDATED,
+      patientId: full.patientId,
+      entityId: full.id,
+      entityType: 'StudyResult',
+      snapshot: this.buildSnapshot(full),
+    });
+
+    return full;
+  }
+
+  private buildSnapshot(r: StudyResult): Record<string, unknown> {
+    return {
+      id: r.id,
+      findings: r.findings,
+      conclusion: r.conclusion,
+      patient: { id: r.patient?.id, fullName: r.patient?.fullName, code: r.patient?.code },
+      doctor:  { id: r.doctor?.id,  fullName: r.doctor?.fullName  },
+      appointment: r.appointment ? { id: r.appointment.id, code: r.appointment.code } : null,
+    };
   }
 }

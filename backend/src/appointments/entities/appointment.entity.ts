@@ -11,6 +11,9 @@ export enum AppointmentStatus {
 
 @Entity('appointments')
 export class Appointment extends CodedEntity {
+  @Column({ type: 'int', unique: true, default: () => "nextval('appointments_code_seq')" })
+  declare code: number;
+
   @ManyToOne(() => User)
   patient: User;
 
