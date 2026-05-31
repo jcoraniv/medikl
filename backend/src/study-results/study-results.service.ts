@@ -84,7 +84,7 @@ export class StudyResultsService {
       });
     }
 
-    const fullResult = await this.findOne(result.id);
+    const fullResult = await this.findOneById(result.id);
     this.activitiesService.createActivity({
       type: ActivityType.RESULT_CREATED,
       patientId: appointment.patientId,
@@ -126,7 +126,16 @@ export class StudyResultsService {
     return paginate(data, total, page, limit);
   }
 
-  async findOne(id: string): Promise<StudyResult> {
+  async findOne(id: string, currentUser?: User): Promise<StudyResult> {
+    const result = await this.findOneById(id);
+    if (currentUser?.role === UserRole.PATIENT && result.patientId !== currentUser.id)
+      throw new ForbiddenException();
+    if (currentUser?.role === UserRole.DOCTOR && result.doctorId !== currentUser.id)
+      throw new ForbiddenException();
+    return result;
+  }
+
+  private async findOneById(id: string): Promise<StudyResult> {
     const result = await this.resultRepo.findOne({
       where: { id },
       relations: ['patient', 'doctor', 'appointment', 'appointment.studyType'],
@@ -155,7 +164,7 @@ export class StudyResultsService {
     dto: UpdateStudyResultDto,
     currentUser: User,
   ): Promise<StudyResult> {
-    const result = await this.findOne(id);
+    const result = await this.findOneById(id);
 
     if (
       currentUser.role === UserRole.DOCTOR &&
@@ -168,7 +177,7 @@ export class StudyResultsService {
 
     Object.assign(result, dto);
     const saved = await this.resultRepo.save(result);
-    const full = await this.findOne(saved.id);
+    const full = await this.findOneById(saved.id);
 
     this.activitiesService.createActivity({
       type: ActivityType.RESULT_UPDATED,

@@ -262,7 +262,7 @@ describe('StudyResultsService', () => {
   // ─── findOne ─────────────────────────────────────────────────────────────────
 
   describe('findOne', () => {
-    it('returns the result when found', async () => {
+    it('returns the result when found (no currentUser — internal use)', async () => {
       resultRepo.findOne.mockResolvedValue(mockResult);
 
       const result = await service.findOne(RESULT_ID);
@@ -274,6 +274,37 @@ describe('StudyResultsService', () => {
       resultRepo.findOne.mockResolvedValue(null);
 
       await expect(service.findOne('nonexistent')).rejects.toThrow(NotFoundException);
+    });
+
+    it('admin can access any result', async () => {
+      resultRepo.findOne.mockResolvedValue(mockResult);
+
+      await expect(service.findOne(RESULT_ID, mockAdminUser)).resolves.toEqual(mockResult);
+    });
+
+    it('patient can access their own result', async () => {
+      resultRepo.findOne.mockResolvedValue(mockResult);
+
+      await expect(service.findOne(RESULT_ID, mockPatientUser)).resolves.toEqual(mockResult);
+    });
+
+    it('throws ForbiddenException when patient accesses another patient result', async () => {
+      const otherPatientResult = { ...mockResult, patientId: 'other-patient-uuid' };
+      resultRepo.findOne.mockResolvedValue(otherPatientResult);
+
+      await expect(service.findOne(RESULT_ID, mockPatientUser)).rejects.toThrow(ForbiddenException);
+    });
+
+    it('doctor can access their own result', async () => {
+      resultRepo.findOne.mockResolvedValue(mockResult);
+
+      await expect(service.findOne(RESULT_ID, mockDoctorUser)).resolves.toEqual(mockResult);
+    });
+
+    it('throws ForbiddenException when doctor accesses another doctor result', async () => {
+      resultRepo.findOne.mockResolvedValue(mockResult);
+
+      await expect(service.findOne(RESULT_ID, mockOtherDoctor)).rejects.toThrow(ForbiddenException);
     });
   });
 

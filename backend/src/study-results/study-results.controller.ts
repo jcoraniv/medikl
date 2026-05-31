@@ -47,8 +47,8 @@ export class StudyResultsController {
 
   @ApiOperation({ summary: 'Get a study result by id' })
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.studyResultsService.findOne(id);
+  findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() currentUser: User) {
+    return this.studyResultsService.findOne(id, currentUser);
   }
 
   @ApiOperation({ summary: 'Update findings or conclusion' })
