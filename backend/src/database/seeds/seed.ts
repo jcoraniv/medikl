@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { DataSource, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import * as dotenv from 'dotenv';
+import OpenAI from 'openai';
 import { BCRYPT_ROUNDS, DEFAULT_LOCALE } from '../../common/constants/app.constants';
 import { User, UserRole } from '../../users/entities/user.entity';
 import { StudyType } from '../../study-types/entities/study-type.entity';
@@ -469,7 +470,42 @@ async function seedActivities(
   for (const act of activities) {
     await repo.save(repo.create(act));
   }
-  console.log(`  [ok]   ${activities.length} activities created (embeddings pending)`);
+  console.log(`  [ok]   ${activities.length} activities created`);
+}
+
+// ─── Embeddings ───────────────────────────────────────────────────────────────
+
+async function seedEmbeddings(ds: DataSource): Promise<void> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    console.log('  [skip] OPENAI_API_KEY not set — embeddings skipped');
+    return;
+  }
+
+  const repo = ds.getRepository(Activity);
+  const pending = await repo
+    .createQueryBuilder('a')
+    .where('a.embedding IS NULL')
+    .getMany();
+
+  if (pending.length === 0) {
+    console.log('  [skip] all activities already have embeddings');
+    return;
+  }
+
+  const openai = new OpenAI({ apiKey });
+  const model = process.env.OPENAI_EMBEDDING_MODEL ?? 'text-embedding-3-small';
+
+  console.log(`  Generating embeddings for ${pending.length} activities (batch)...`);
+  const response = await openai.embeddings.create({
+    model,
+    input: pending.map((a) => a.generatedText),
+  });
+
+  for (let i = 0; i < pending.length; i++) {
+    await repo.update(pending[i].id, { embedding: response.data[i].embedding });
+  }
+  console.log(`  [ok]   ${pending.length} embeddings stored`);
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -492,6 +528,9 @@ async function seed(): Promise<void> {
 
   console.log('\nSeeding activities...');
   await seedActivities(dataSource, appointments, results);
+
+  console.log('\nGenerating embeddings...');
+  await seedEmbeddings(dataSource);
 
   await dataSource.destroy();
   console.log('\nSeed complete ✓');
