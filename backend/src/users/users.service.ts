@@ -6,6 +6,7 @@ import { paginate, PaginatedResponse } from '../common/interfaces/paginated-resp
 import { User, UserRole } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { CreatePatientDto } from './dto/create-patient.dto';
+import { CreateUserByAdminDto } from './dto/create-user-by-admin.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
 import * as bcrypt from 'bcrypt';
 
@@ -32,6 +33,33 @@ export class UsersService {
 
   findByRole(role: UserRole): Promise<User[]> {
     return this.userRepo.find({ where: { role } });
+  }
+
+  async createUser(dto: CreateUserByAdminDto): Promise<User> {
+    const passwordHash = await bcrypt.hash(dto.password, 10);
+    const user = this.userRepo.create({
+      fullName: dto.fullName,
+      email: dto.email,
+      phone: dto.phone ?? null,
+      passwordHash,
+      role: dto.role ?? UserRole.PATIENT,
+    });
+    try {
+      return await this.userRepo.save(user);
+    } catch (err: any) {
+      if (err.code === '23505') throw new ConflictException('Email already in use');
+      throw err;
+    }
+  }
+
+  async findUsers(pagination: PaginationQueryDto): Promise<PaginatedResponse<User>> {
+    const { page, limit } = pagination;
+    const [data, total] = await this.userRepo.findAndCount({
+      order: { code: 'ASC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    return paginate(data, total, page, limit);
   }
 
   async createPatient(dto: CreatePatientDto): Promise<User> {

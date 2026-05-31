@@ -14,6 +14,7 @@ import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger'
 import { Roles } from '../auth/decorators/roles.decorator';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { CreatePatientDto } from './dto/create-patient.dto';
+import { CreateUserByAdminDto } from './dto/create-user-by-admin.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
 import { UserRole } from './entities/user.entity';
 import { UsersService } from './users.service';
@@ -30,6 +31,20 @@ export class UsersController {
   findAll(@Query('role') role?: UserRole) {
     if (role) return this.usersService.findByRole(role);
     return [];
+  }
+
+  @ApiOperation({ summary: 'Create a user with any role (admin only)' })
+  @Roles(UserRole.ADMIN)
+  @Post()
+  createUser(@Body() dto: CreateUserByAdminDto) {
+    return this.usersService.createUser(dto);
+  }
+
+  @ApiOperation({ summary: 'List all users paginated (admin only)' })
+  @Roles(UserRole.ADMIN)
+  @Get('all')
+  findUsers(@Query() pagination: PaginationQueryDto) {
+    return this.usersService.findUsers(pagination);
   }
 
   @ApiOperation({ summary: 'Create a patient' })

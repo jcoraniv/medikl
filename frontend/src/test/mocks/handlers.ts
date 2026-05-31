@@ -148,6 +148,26 @@ export const handlers = [
     return HttpResponse.json({ ...mockStudyResults[0], id: params.id, ...body });
   }),
 
+  http.post(`${API_BASE_URL}/users`, async ({ request }) => {
+    const body = await request.json() as Record<string, unknown>;
+    return HttpResponse.json(
+      { id: 'new-user-uuid', code: 10, phone: null, createdAt: '2026-06-01T00:00:00Z', deletedAt: null, role: 'patient', ...body },
+      { status: 201 },
+    );
+  }),
+
+  http.get(`${API_BASE_URL}/users/all`, ({ request }) => {
+    const page = new URL(request.url).searchParams.get('page') ?? '1';
+    return HttpResponse.json({
+      data: [
+        { id: 'admin-uuid', code: 99, fullName: 'Admin', email: 'admin@test.com', phone: null, role: 'admin', createdAt: '2026-01-01T00:00:00Z', deletedAt: null },
+        { id: 'doctor-uuid', code: 2, fullName: 'Dra. García', email: 'doctor@test.com', phone: null, role: 'doctor', createdAt: '2026-01-01T00:00:00Z', deletedAt: null },
+        { id: 'patient-uuid', code: 1, fullName: 'Carlos López', email: 'carlos@test.com', phone: '+591 70000000', role: 'patient', createdAt: '2026-01-01T00:00:00Z', deletedAt: null },
+      ],
+      total: 3, page: Number(page), limit: 10, totalPages: 1,
+    });
+  }),
+
   http.post(`${API_BASE_URL}/users/patients`, async ({ request }) => {
     const body = await request.json() as Record<string, unknown>;
     return HttpResponse.json(

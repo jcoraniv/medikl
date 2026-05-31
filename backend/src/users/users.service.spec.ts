@@ -50,6 +50,59 @@ describe('UsersService — patient management', () => {
     service = module.get(UsersService);
   });
 
+  // ─── createUser ───────────────────────────────────────────────────────────────
+
+  describe('createUser', () => {
+    it('creates a user with the specified role', async () => {
+      userRepo.save.mockResolvedValue({ ...mockPatient, role: UserRole.DOCTOR });
+
+      const result = await service.createUser({
+        fullName: 'Dr. Nuevo',
+        email: 'dr@test.com',
+        password: 'secret123',
+        role: UserRole.DOCTOR,
+      });
+
+      expect(userRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ role: UserRole.DOCTOR }),
+      );
+      expect(result.role).toBe(UserRole.DOCTOR);
+    });
+
+    it('defaults to PATIENT role when role is not provided', async () => {
+      userRepo.save.mockResolvedValue(mockPatient);
+
+      await service.createUser({ fullName: 'X', email: 'x@test.com', password: 'secret123' });
+
+      expect(userRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ role: UserRole.PATIENT }),
+      );
+    });
+
+    it('throws ConflictException when email is already in use', async () => {
+      userRepo.save.mockRejectedValue({ code: '23505' });
+
+      await expect(
+        service.createUser({ fullName: 'X', email: 'dup@test.com', password: 'secret123' }),
+      ).rejects.toThrow(ConflictException);
+    });
+  });
+
+  // ─── findUsers ────────────────────────────────────────────────────────────────
+
+  describe('findUsers', () => {
+    it('returns paginated list of all users', async () => {
+      userRepo.findAndCount.mockResolvedValue([[mockPatient], 1]);
+
+      const result = await service.findUsers(DEFAULT_PAGINATION);
+
+      expect(result.data).toEqual([mockPatient]);
+      expect(userRepo.findAndCount).toHaveBeenCalledWith(
+        expect.objectContaining({ order: { code: 'ASC' } }),
+      );
+    });
+  });
+
   // ─── createPatient ────────────────────────────────────────────────────────────
 
   describe('createPatient', () => {

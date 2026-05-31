@@ -17,7 +17,7 @@ import { useAuthStore } from '@/store/authStore';
 
 const navItems = [
   { to: '/dashboard',  label: 'Dashboard',   icon: LayoutDashboard },
-  { to: '/patients',   label: 'Patients',    icon: Users, roles: ['admin', 'doctor'] },
+  { to: '/users', label: 'Users', labelByRole: { doctor: 'Patients' }, icon: Users, roles: ['admin', 'doctor'] },
   { to: '/appointments', label: 'Appointments', icon: Calendar },
   {
     to: '/study-types',
@@ -63,7 +63,7 @@ function Sidebar({ onClose, user, onLogout, closeable }: SidebarProps) {
           .filter(
             (item) => !item.roles || item.roles.includes(user?.role ?? ''),
           )
-          .map(({ to, label, icon: Icon }) => (
+          .map(({ to, label, labelByRole, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}
@@ -77,7 +77,7 @@ function Sidebar({ onClose, user, onLogout, closeable }: SidebarProps) {
               }
             >
               <Icon size={16} />
-              {label}
+              {(labelByRole as Record<string, string> | undefined)?.[user?.role ?? ''] ?? label}
             </NavLink>
           ))}
       </nav>
