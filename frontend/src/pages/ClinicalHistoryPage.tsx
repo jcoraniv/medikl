@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { Search, Loader2, User } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -85,11 +85,19 @@ function AppointmentCard({ appt }: { appt: ClinicalHistoryAppointment }) {
 }
 
 export function ClinicalHistoryPage() {
-  const [code, setCode] = useState('');
+  const [searchParams] = useSearchParams();
+  const initialCode = searchParams.get('code') ?? '';
+  const [code, setCode] = useState(initialCode);
 
   const mutation = useMutation({
     mutationFn: (c: number) => clinicalHistoryService.findByPatientCode(c),
   });
+
+  useEffect(() => {
+    const parsed = parseInt(initialCode, 10);
+    if (!isNaN(parsed)) mutation.mutate(parsed);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();

@@ -7,6 +7,7 @@ import {
   FileText,
   Search,
   ClipboardList,
+  Users,
   LogOut,
   Menu,
   X,
@@ -15,7 +16,8 @@ import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/authStore';
 
 const navItems = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/dashboard',  label: 'Dashboard',   icon: LayoutDashboard },
+  { to: '/patients',   label: 'Patients',    icon: Users, roles: ['admin', 'doctor'] },
   { to: '/appointments', label: 'Appointments', icon: Calendar },
   {
     to: '/study-types',

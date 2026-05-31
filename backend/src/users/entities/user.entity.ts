@@ -1,5 +1,5 @@
 import { Exclude } from 'class-transformer';
-import { Column, Entity } from 'typeorm';
+import { Column, DeleteDateColumn, Entity } from 'typeorm';
 import { CodedEntity } from '../../common/entities/coded.entity';
 
 export enum UserRole {
@@ -25,4 +25,10 @@ export class User extends CodedEntity {
 
   @Column({ type: 'enum', enum: UserRole, default: UserRole.PATIENT })
   role: UserRole;
+
+  @Column({ type: 'varchar', nullable: true })
+  phone: string | null;
+
+  @DeleteDateColumn()
+  deletedAt: Date | null;
 }

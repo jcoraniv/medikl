@@ -148,6 +148,34 @@ export const handlers = [
     return HttpResponse.json({ ...mockStudyResults[0], id: params.id, ...body });
   }),
 
+  http.post(`${API_BASE_URL}/users/patients`, async ({ request }) => {
+    const body = await request.json() as Record<string, unknown>;
+    return HttpResponse.json(
+      { id: 'new-patient-uuid', code: 3, role: 'patient', phone: null, createdAt: '2026-06-01T00:00:00Z', deletedAt: null, ...body },
+      { status: 201 },
+    );
+  }),
+
+  http.get(`${API_BASE_URL}/users/patients`, ({ request }) => {
+    const page = new URL(request.url).searchParams.get('page') ?? '1';
+    return HttpResponse.json({
+      data: [
+        { id: 'patient-uuid', code: 1, fullName: 'Carlos López', email: 'carlos@test.com', phone: '+591 70000000', role: 'patient', createdAt: '2026-01-01T00:00:00Z', deletedAt: null },
+        { id: 'patient-uuid-2', code: 2, fullName: 'Ana Torres', email: 'ana@test.com', phone: null, role: 'patient', createdAt: '2026-01-02T00:00:00Z', deletedAt: null },
+      ],
+      total: 2, page: Number(page), limit: 10, totalPages: 1,
+    });
+  }),
+
+  http.patch(`${API_BASE_URL}/users/patients/:id`, async ({ params, request }) => {
+    const body = await request.json() as Record<string, unknown>;
+    return HttpResponse.json({ id: params.id, code: 1, role: 'patient', createdAt: '2026-01-01T00:00:00Z', deletedAt: null, ...body });
+  }),
+
+  http.delete(`${API_BASE_URL}/users/patients/:id`, () => {
+    return new HttpResponse(null, { status: 204 });
+  }),
+
   http.get(`${API_BASE_URL}/clinical-history/:code`, ({ params }) => {
     if (params.code === '999') {
       return HttpResponse.json({ message: 'Patient not found' }, { status: 404 });
