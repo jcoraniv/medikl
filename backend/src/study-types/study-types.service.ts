@@ -18,7 +18,7 @@ export class StudyTypesService {
   async findAll(pagination: PaginationQueryDto): Promise<PaginatedResponse<StudyType>> {
     const { page, limit } = pagination;
     const [data, total] = await this.repo.findAndCount({
-      order: { name: 'ASC' },
+      order: { createdAt: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
     });

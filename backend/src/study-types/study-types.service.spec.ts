@@ -80,14 +80,14 @@ describe('StudyTypesService', () => {
   });
 
   describe('findAll', () => {
-    it('returns paginated study types ordered by name', async () => {
+    it('returns paginated study types ordered by createdAt descending', async () => {
       mockRepo.findAndCount.mockResolvedValue([[mockStudyType], 1]);
       const response = await service.findAll(DEFAULT_PAGINATION);
       expect(response.data).toEqual([mockStudyType]);
       expect(response.total).toBe(1);
       expect(response.page).toBe(1);
       expect(mockRepo.findAndCount).toHaveBeenCalledWith(
-        expect.objectContaining({ order: { name: 'ASC' }, skip: 0, take: 10 }),
+        expect.objectContaining({ order: { createdAt: 'DESC' }, skip: 0, take: 10 }),
       );
     });
   });
