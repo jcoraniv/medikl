@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Appointment, AppointmentStatus } from '../appointments/entities/appointment.entity';
@@ -18,6 +18,14 @@ const mockDoctor = {
   id: 'doctor-id',
   code: 2,
   fullName: 'Dra. García',
+  role: UserRole.DOCTOR,
+} as User;
+
+const mockAdmin = {
+  id: 'admin-id',
+  code: 99,
+  fullName: 'Admin',
+  role: UserRole.ADMIN,
 } as User;
 
 const mockStudyType = { id: 'st-1', name: 'Ecografía abdominal' };
@@ -70,10 +78,33 @@ describe('ClinicalHistoryService', () => {
     service = module.get(ClinicalHistoryService);
   });
 
+  describe('ownership', () => {
+    it('throws ForbiddenException when caller is a patient', async () => {
+      await expect(service.findByPatientCode(1, mockPatient)).rejects.toThrow(ForbiddenException);
+      expect(userRepo.findOne).not.toHaveBeenCalled();
+    });
+
+    it('allows admin to access any patient history', async () => {
+      userRepo.findOne.mockResolvedValue(mockPatient);
+      appointmentRepo.find.mockResolvedValue([]);
+      resultRepo.find.mockResolvedValue([]);
+
+      await expect(service.findByPatientCode(1, mockAdmin)).resolves.toBeDefined();
+    });
+
+    it('allows doctor to access any patient history', async () => {
+      userRepo.findOne.mockResolvedValue(mockPatient);
+      appointmentRepo.find.mockResolvedValue([]);
+      resultRepo.find.mockResolvedValue([]);
+
+      await expect(service.findByPatientCode(1, mockDoctor)).resolves.toBeDefined();
+    });
+  });
+
   describe('findByPatientCode', () => {
     it('throws NotFoundException when patient code does not exist', async () => {
       userRepo.findOne.mockResolvedValue(null);
-      await expect(service.findByPatientCode(999)).rejects.toThrow(NotFoundException);
+      await expect(service.findByPatientCode(999, mockAdmin)).rejects.toThrow(NotFoundException);
     });
 
     it('queries user repo with correct code and PATIENT role', async () => {
@@ -81,7 +112,7 @@ describe('ClinicalHistoryService', () => {
       appointmentRepo.find.mockResolvedValue([]);
       resultRepo.find.mockResolvedValue([]);
 
-      await service.findByPatientCode(1);
+      await service.findByPatientCode(1, mockAdmin);
 
       expect(userRepo.findOne).toHaveBeenCalledWith({
         where: { code: 1, role: UserRole.PATIENT },
@@ -93,7 +124,7 @@ describe('ClinicalHistoryService', () => {
       appointmentRepo.find.mockResolvedValue([mockAppointment]);
       resultRepo.find.mockResolvedValue([mockResult]);
 
-      const history = await service.findByPatientCode(1);
+      const history = await service.findByPatientCode(1, mockDoctor);
 
       expect(history.patient.fullName).toBe('Carlos López');
       expect(history.patient.code).toBe(1);
@@ -112,7 +143,7 @@ describe('ClinicalHistoryService', () => {
       appointmentRepo.find.mockResolvedValue([mockAppointment]);
       resultRepo.find.mockResolvedValue([]);
 
-      const history = await service.findByPatientCode(1);
+      const history = await service.findByPatientCode(1, mockAdmin);
 
       expect(history.appointments[0].studyResult).toBeNull();
     });
@@ -122,7 +153,7 @@ describe('ClinicalHistoryService', () => {
       appointmentRepo.find.mockResolvedValue([]);
       resultRepo.find.mockResolvedValue([]);
 
-      const history = await service.findByPatientCode(1);
+      const history = await service.findByPatientCode(1, mockAdmin);
 
       expect(history.appointments).toHaveLength(0);
     });
@@ -133,7 +164,7 @@ describe('ClinicalHistoryService', () => {
       appointmentRepo.find.mockResolvedValue([apptNoType]);
       resultRepo.find.mockResolvedValue([]);
 
-      const history = await service.findByPatientCode(1);
+      const history = await service.findByPatientCode(1, mockAdmin);
 
       expect(history.appointments[0].studyType).toBeNull();
     });

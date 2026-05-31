@@ -1,16 +1,36 @@
 import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Calendar, FlaskConical, FileText, Search, ClipboardList, LogOut, Menu, X } from 'lucide-react';
+import {
+  LayoutDashboard,
+  Calendar,
+  FlaskConical,
+  FileText,
+  Search,
+  ClipboardList,
+  LogOut,
+  Menu,
+  X,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/authStore';
 
 const navItems = [
-  { to: '/dashboard',     label: 'Dashboard',       icon: LayoutDashboard },
-  { to: '/appointments',  label: 'Appointments',    icon: Calendar },
-  { to: '/study-types',   label: 'Study Types',     icon: FlaskConical,  roles: ['admin', 'doctor'] },
-  { to: '/study-results', label: 'Study Results',   icon: FileText },
-  { to: '/search',            label: 'Semantic Search',  icon: Search },
-  { to: '/clinical-history',  label: 'Clinical History', icon: ClipboardList, roles: ['admin', 'doctor'] },
+  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/appointments', label: 'Appointments', icon: Calendar },
+  {
+    to: '/study-types',
+    label: 'Study Types',
+    icon: FlaskConical,
+    roles: ['admin', 'doctor'],
+  },
+  { to: '/study-results', label: 'Study Results', icon: FileText },
+  {
+    to: '/clinical-history',
+    label: 'Clinical History',
+    icon: ClipboardList,
+    roles: ['admin', 'doctor'],
+  },
+  { to: '/search', label: 'Semantic Search', icon: Search },
 ];
 
 interface SidebarProps {
@@ -37,31 +57,42 @@ function Sidebar({ onClose, user, onLogout, closeable }: SidebarProps) {
       </div>
 
       <nav className="flex-1 space-y-1 px-3 py-4">
-        {navItems.filter(item => !item.roles || item.roles.includes(user?.role ?? '')).map(({ to, label, icon: Icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            onClick={onClose}
-            className={({ isActive }) =>
-              `flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-              }`
-            }
-          >
-            <Icon size={16} />
-            {label}
-          </NavLink>
-        ))}
+        {navItems
+          .filter(
+            (item) => !item.roles || item.roles.includes(user?.role ?? ''),
+          )
+          .map(({ to, label, icon: Icon }) => (
+            <NavLink
+              key={to}
+              to={to}
+              onClick={onClose}
+              className={({ isActive }) =>
+                `flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                }`
+              }
+            >
+              <Icon size={16} />
+              {label}
+            </NavLink>
+          ))}
       </nav>
 
       <div className="border-t p-4">
         <div className="mb-3">
           <p className="truncate text-sm font-medium">{user?.fullName}</p>
-          <p className="truncate text-xs text-muted-foreground capitalize">{user?.role}</p>
+          <p className="truncate text-xs text-muted-foreground capitalize">
+            {user?.role}
+          </p>
         </div>
-        <Button variant="ghost" size="sm" className="w-full justify-start gap-2" onClick={onLogout}>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full justify-start gap-2"
+          onClick={onLogout}
+        >
           <LogOut size={14} />
           Sign out
         </Button>
@@ -118,7 +149,9 @@ export function AppLayout() {
           >
             <Menu size={20} />
           </button>
-          <span className="ml-4 text-lg font-semibold tracking-tight">medikt</span>
+          <span className="ml-4 text-lg font-semibold tracking-tight">
+            medikt
+          </span>
         </header>
 
         <main className="flex-1 overflow-auto">

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Appointment } from '../appointments/entities/appointment.entity';
@@ -41,7 +41,11 @@ export class ClinicalHistoryService {
     private readonly resultRepo: Repository<StudyResult>,
   ) {}
 
-  async findByPatientCode(code: number): Promise<ClinicalHistory> {
+  async findByPatientCode(code: number, currentUser: User): Promise<ClinicalHistory> {
+    if (currentUser.role === UserRole.PATIENT) {
+      throw new ForbiddenException('Patients cannot access clinical history');
+    }
+
     const patient = await this.userRepo.findOne({
       where: { code, role: UserRole.PATIENT },
     });
