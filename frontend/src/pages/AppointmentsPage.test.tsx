@@ -7,6 +7,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { server } from '@/test/mocks/server';
 import { mockAppointments } from '@/test/mocks/handlers';
 import { useAuthStore } from '@/store/authStore';
+import { API_BASE_URL } from '@/lib/config';
 import { AppointmentsPage } from './AppointmentsPage';
 
 const ADMIN_USER  = { id: 'u1', code: 99, email: 'admin@test.com',  fullName: 'Admin',       role: 'admin'  as const };
@@ -45,7 +46,9 @@ describe('AppointmentsPage', () => {
 
   it('shows empty state when there are no appointments', async () => {
     server.use(
-      http.get('http://localhost:3000/api/appointments', () => HttpResponse.json([])),
+      http.get(`${API_BASE_URL}/appointments`, () =>
+        HttpResponse.json({ data: [], total: 0, page: 1, limit: 10, totalPages: 0 }),
+      ),
     );
     renderPage();
     expect(await screen.findByText(/no appointments yet/i)).toBeInTheDocument();
@@ -77,8 +80,8 @@ describe('AppointmentsPage', () => {
 
   it('does not show three-dots menu for completed appointments', async () => {
     server.use(
-      http.get('http://localhost:3000/api/appointments', () =>
-        HttpResponse.json([{ ...mockAppointments[0], status: 'completed' }]),
+      http.get(`${API_BASE_URL}/appointments`, () =>
+        HttpResponse.json({ data: [{ ...mockAppointments[0], status: 'completed' }], total: 1, page: 1, limit: 10, totalPages: 1 }),
       ),
     );
     renderPage();
@@ -92,8 +95,8 @@ describe('AppointmentsPage', () => {
 
   it('hides three-dots menu entirely for cancelled appointments', async () => {
     server.use(
-      http.get('http://localhost:3000/api/appointments', () =>
-        HttpResponse.json([{ ...mockAppointments[0], status: 'cancelled' }]),
+      http.get(`${API_BASE_URL}/appointments`, () =>
+        HttpResponse.json({ data: [{ ...mockAppointments[0], status: 'cancelled' }], total: 1, page: 1, limit: 10, totalPages: 1 }),
       ),
     );
     renderPage();

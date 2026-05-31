@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ActivitiesService } from '../activities/activities.service';
 import { ActivityType } from '../activities/entities/activity.entity';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
+import { paginate, PaginatedResponse } from '../common/interfaces/paginated-response.interface';
 import { User, UserRole } from '../users/entities/user.entity';
 import { Appointment, AppointmentStatus } from './entities/appointment.entity';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
@@ -55,23 +57,32 @@ export class AppointmentsService {
     return full;
   }
 
-  findAll(currentUser: User, patientId?: string, doctorId?: string, status?: AppointmentStatus): Promise<Appointment[]> {
+  async findAll(
+    currentUser: User,
+    pagination: PaginationQueryDto,
+    patientId?: string,
+    doctorId?: string,
+    status?: AppointmentStatus,
+  ): Promise<PaginatedResponse<Appointment>> {
+    const { page, limit } = pagination;
     const where: Record<string, unknown> = {};
     if (patientId) where.patientId = patientId;
     if (status) where.status = status;
 
-    // Doctors can only see their own appointments
     if (currentUser.role === UserRole.DOCTOR) {
       where.doctorId = currentUser.id;
     } else if (doctorId) {
       where.doctorId = doctorId;
     }
 
-    return this.appointmentRepo.find({
+    const [data, total] = await this.appointmentRepo.findAndCount({
       where,
       relations: ['patient', 'doctor', 'studyType'],
       order: { scheduledDate: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
     });
+    return paginate(data, total, page, limit);
   }
 
   async findOne(id: string, currentUser: User): Promise<Appointment> {

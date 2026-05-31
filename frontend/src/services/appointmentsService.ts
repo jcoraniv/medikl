@@ -1,16 +1,19 @@
 import api from '@/lib/axios';
 import type { Appointment, CreateAppointmentDto, UpdateAppointmentDto, AppointmentStatus } from '@/types/appointment';
+import type { PaginatedResponse } from '@/types/pagination';
 
 interface AppointmentFilters {
   patientId?: string;
   doctorId?: string;
   status?: AppointmentStatus;
+  page?: number;
+  limit?: number;
 }
 
 export const appointmentsService = {
-  getAll: (filters: AppointmentFilters = {}): Promise<Appointment[]> => {
+  getAll: (filters: AppointmentFilters = {}): Promise<PaginatedResponse<Appointment>> => {
     const params = Object.fromEntries(Object.entries(filters).filter(([, v]) => v !== undefined));
-    return api.get<Appointment[]>('/appointments', { params }).then((r) => r.data);
+    return api.get<PaginatedResponse<Appointment>>('/appointments', { params }).then((r) => r.data);
   },
 
   getOne: (id: string): Promise<Appointment> =>

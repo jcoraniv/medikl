@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Pagination } from '@/components/ui/pagination';
 import { Plus, Pencil, Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -195,19 +196,23 @@ export function StudyResultsPage() {
   const queryClient = useQueryClient();
 
   const [dialog, setDialog] = useState<DialogState>(null);
+  const [page, setPage] = useState(1);
 
-  const { data: results = [], isLoading } = useQuery({
-    queryKey: ['study-results'],
-    queryFn: () => studyResultsService.getAll(),
+  const { data, isLoading } = useQuery({
+    queryKey: ['study-results', page],
+    queryFn: () => studyResultsService.getAll({ page }),
   });
 
-  const { data: appointments = [] } = useQuery({
-    queryKey: ['appointments'],
-    queryFn: () => appointmentsService.getAll(),
+  const results = data?.data ?? [];
+  const totalPages = data?.totalPages ?? 1;
+
+  const { data: appointmentsData } = useQuery({
+    queryKey: ['appointments', 'all'],
+    queryFn: () => appointmentsService.getAll({ limit: 100 }),
     enabled: canWrite,
   });
 
-  const scheduledOrCompleted = appointments.filter(
+  const scheduledOrCompleted = (appointmentsData?.data ?? []).filter(
     (a) => a.status === 'scheduled' || a.status === 'completed',
   );
 
@@ -234,7 +239,7 @@ export function StudyResultsPage() {
         <p className="py-12 text-center text-muted-foreground">No study results yet.</p>
       ) : (
         <div className="rounded-md border">
-          <table className="w-full">
+          <table className="w-full" data-testid="results-table">
             <thead className="border-b bg-muted/50">
               <tr>
                 {['Patient', 'Doctor', 'Appt #', 'Study Type', 'Findings', ...(canWrite ? [''] : [])].map((h) => (
@@ -277,6 +282,9 @@ export function StudyResultsPage() {
               ))}
             </tbody>
           </table>
+          <div className="border-t py-3">
+            <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+          </div>
         </div>
       )}
 

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Pagination } from '@/components/ui/pagination';
 import { Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -141,17 +142,26 @@ export function StudyTypesPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<StudyType | undefined>();
+  const [page, setPage] = useState(1);
 
-  const { data: studyTypes = [], isLoading } = useQuery({
-    queryKey: ['study-types'],
-    queryFn: studyTypesService.getAll,
+  const { data, isLoading } = useQuery({
+    queryKey: ['study-types', page],
+    queryFn: () => studyTypesService.getAll(page),
   });
+
+  const studyTypes = data?.data ?? [];
+  const totalPages = data?.totalPages ?? 1;
 
   const deleteMutation = useMutation({
     mutationFn: studyTypesService.remove,
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ['study-types'] }),
   });
+
+  function handlePageChange(p: number) {
+    setPage(p);
+    queryClient.invalidateQueries({ queryKey: ['study-types', p] });
+  }
 
   function canDelete(st: StudyType): boolean {
     if (isAdmin) return true;
@@ -255,6 +265,9 @@ export function StudyTypesPage() {
               ))}
             </tbody>
           </table>
+          <div className="border-t py-3">
+            <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+          </div>
         </div>
       )}
 

@@ -5,6 +5,7 @@ import { http, HttpResponse } from 'msw';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { server } from '@/test/mocks/server';
 import { mockStats } from '@/test/mocks/handlers';
+import { API_BASE_URL } from '@/lib/config';
 import { DashboardPage } from './DashboardPage';
 
 function renderDashboardPage() {
@@ -56,7 +57,7 @@ describe('DashboardPage', () => {
 
   it('shows error message when the API fails', async () => {
     server.use(
-      http.get('http://localhost:3000/api/dashboard/stats', () => {
+      http.get(`${API_BASE_URL}/dashboard/stats`, () => {
         return HttpResponse.json({ message: 'Internal server error' }, { status: 500 });
       }),
     );

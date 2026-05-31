@@ -1,7 +1,8 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { User, UserRole } from '../users/entities/user.entity';
 import { CreateStudyTypeDto } from './dto/create-study-type.dto';
 import { UpdateStudyTypeDto } from './dto/update-study-type.dto';
@@ -13,10 +14,10 @@ import { StudyTypesService } from './study-types.service';
 export class StudyTypesController {
   constructor(private readonly studyTypesService: StudyTypesService) {}
 
-  @ApiOperation({ summary: 'List all study types' })
+  @ApiOperation({ summary: 'List all study types (paginated)' })
   @Get()
-  findAll() {
-    return this.studyTypesService.findAll();
+  findAll(@Query() pagination: PaginationQueryDto) {
+    return this.studyTypesService.findAll(pagination);
   }
 
   @ApiOperation({ summary: 'Get study type by id' })

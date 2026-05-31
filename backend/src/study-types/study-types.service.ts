@@ -1,6 +1,8 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
+import { paginate, PaginatedResponse } from '../common/interfaces/paginated-response.interface';
 import { User, UserRole } from '../users/entities/user.entity';
 import { CreateStudyTypeDto } from './dto/create-study-type.dto';
 import { UpdateStudyTypeDto } from './dto/update-study-type.dto';
@@ -13,8 +15,14 @@ export class StudyTypesService {
     private readonly repo: Repository<StudyType>,
   ) {}
 
-  findAll(): Promise<StudyType[]> {
-    return this.repo.find({ order: { name: 'ASC' } });
+  async findAll(pagination: PaginationQueryDto): Promise<PaginatedResponse<StudyType>> {
+    const { page, limit } = pagination;
+    const [data, total] = await this.repo.findAndCount({
+      order: { name: 'ASC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    return paginate(data, total, page, limit);
   }
 
   async findOne(id: string): Promise<StudyType> {

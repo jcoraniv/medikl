@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Loader2, FileText, CheckCircle, XCircle, MoreHorizontal } from 'lucide-react';
+import { Pagination } from '@/components/ui/pagination';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -106,13 +107,17 @@ export function AppointmentsPage() {
 
   const [newOpen, setNewOpen] = useState(false);
   const [resultAppointment, setResultAppointment] = useState<Appointment | null>(null);
+  const [page, setPage] = useState(1);
 
   const queryClient = useQueryClient();
 
-  const { data: appointments = [], isLoading } = useQuery({
-    queryKey: ['appointments'],
-    queryFn: () => appointmentsService.getAll(),
+  const { data, isLoading } = useQuery({
+    queryKey: ['appointments', page],
+    queryFn: () => appointmentsService.getAll({ page }),
   });
+
+  const appointments = data?.data ?? [];
+  const totalPages = data?.totalPages ?? 1;
 
   const cancelMutation = useMutation({
     mutationFn: (id: string) => appointmentsService.cancel(id),
@@ -123,6 +128,11 @@ export function AppointmentsPage() {
     mutationFn: (id: string) => appointmentsService.complete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['appointments'] }),
   });
+
+  function handlePageChange(p: number) {
+    setPage(p);
+    queryClient.invalidateQueries({ queryKey: ['appointments', p] });
+  }
 
   return (
     <div className="p-8">
@@ -169,6 +179,9 @@ export function AppointmentsPage() {
               ))}
             </tbody>
           </table>
+          <div className="border-t py-3">
+            <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+          </div>
         </div>
       )}
 

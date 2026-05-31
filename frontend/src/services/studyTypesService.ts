@@ -1,5 +1,6 @@
 import api from '@/lib/axios';
 import type { StudyType } from '@/types/appointment';
+import type { PaginatedResponse } from '@/types/pagination';
 
 export interface StudyTypePayload {
   name: string;
@@ -9,8 +10,8 @@ export interface StudyTypePayload {
 }
 
 export const studyTypesService = {
-  getAll: (): Promise<StudyType[]> =>
-    api.get<StudyType[]>('/study-types').then((r) => r.data),
+  getAll: (page = 1, limit = 10): Promise<PaginatedResponse<StudyType>> =>
+    api.get<PaginatedResponse<StudyType>>('/study-types', { params: { page, limit } }).then((r) => r.data),
 
   create: (dto: StudyTypePayload): Promise<StudyType> =>
     api.post<StudyType>('/study-types', dto).then((r) => r.data),

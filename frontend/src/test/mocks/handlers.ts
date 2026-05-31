@@ -77,7 +77,7 @@ export const handlers = [
   }),
 
   http.get(`${API_BASE_URL}/appointments`, () => {
-    return HttpResponse.json(mockAppointments);
+    return HttpResponse.json({ data: mockAppointments, total: mockAppointments.length, page: 1, limit: 10, totalPages: 1 });
   }),
 
   http.post(`${API_BASE_URL}/appointments`, async ({ request }) => {
@@ -105,7 +105,7 @@ export const handlers = [
   }),
 
   http.get(`${API_BASE_URL}/study-types`, () => {
-    return HttpResponse.json(mockStudyTypes);
+    return HttpResponse.json({ data: mockStudyTypes, total: mockStudyTypes.length, page: 1, limit: 10, totalPages: 1 });
   }),
 
   http.post(`${API_BASE_URL}/study-types`, async ({ request }) => {
@@ -123,7 +123,7 @@ export const handlers = [
   }),
 
   http.get(`${API_BASE_URL}/study-results`, () => {
-    return HttpResponse.json(mockStudyResults);
+    return HttpResponse.json({ data: mockStudyResults, total: mockStudyResults.length, page: 1, limit: 10, totalPages: 1 });
   }),
 
   http.post(`${API_BASE_URL}/study-results`, async ({ request }) => {

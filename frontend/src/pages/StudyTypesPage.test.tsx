@@ -47,7 +47,9 @@ describe('StudyTypesPage', () => {
   });
 
   it('shows empty state when there are no study types', async () => {
-    server.use(http.get(`${API_BASE_URL}/study-types`, () => HttpResponse.json([])));
+    server.use(http.get(`${API_BASE_URL}/study-types`, () =>
+      HttpResponse.json({ data: [], total: 0, page: 1, limit: 10, totalPages: 0 }),
+    ));
     renderPage();
     expect(await screen.findByText(/no study types yet/i)).toBeInTheDocument();
   });
@@ -114,7 +116,7 @@ describe('StudyTypesPage', () => {
     // Only expose the study type owned by the admin
     server.use(
       http.get(`${API_BASE_URL}/study-types`, () =>
-        HttpResponse.json([{ id: 'st-uuid-1', name: 'Ecografía abdominal', description: null, duration: 30, address: null, createdById: 'u1', deletedAt: null }]),
+        HttpResponse.json({ data: [{ id: 'st-uuid-1', name: 'Ecografía abdominal', description: null, duration: 30, address: null, createdById: 'u1', deletedAt: null }], total: 1, page: 1, limit: 10, totalPages: 1 }),
       ),
     );
     useAuthStore.setState({ token: 'mock-token', user: DOCTOR_USER, isAuthenticated: true });

@@ -68,8 +68,11 @@ const mockResult: StudyResult = {
   updatedAt: new Date(),
 };
 
+const DEFAULT_PAGINATION = { page: 1, limit: 10 };
+
 const resultRepo = {
   find: jest.fn(),
+  findAndCount: jest.fn(),
   findOne: jest.fn(),
   create: jest.fn(),
   save: jest.fn(),
@@ -182,42 +185,43 @@ describe('StudyResultsService', () => {
 
   describe('findAll', () => {
     it('admin sees all results when no filters are given', async () => {
-      resultRepo.find.mockResolvedValue([mockResult]);
+      resultRepo.findAndCount.mockResolvedValue([[mockResult], 1]);
 
-      const results = await service.findAll(mockAdminUser);
+      const response = await service.findAll(mockAdminUser, DEFAULT_PAGINATION);
 
-      expect(results).toEqual([mockResult]);
-      expect(resultRepo.find).toHaveBeenCalledWith(
+      expect(response.data).toEqual([mockResult]);
+      expect(response.total).toBe(1);
+      expect(resultRepo.findAndCount).toHaveBeenCalledWith(
         expect.objectContaining({ where: {} }),
       );
     });
 
     it('admin can filter by doctorId', async () => {
-      resultRepo.find.mockResolvedValue([mockResult]);
+      resultRepo.findAndCount.mockResolvedValue([[mockResult], 1]);
 
-      await service.findAll(mockAdminUser, undefined, DOCTOR_ID);
+      await service.findAll(mockAdminUser, DEFAULT_PAGINATION, undefined, DOCTOR_ID);
 
-      expect(resultRepo.find).toHaveBeenCalledWith(
+      expect(resultRepo.findAndCount).toHaveBeenCalledWith(
         expect.objectContaining({ where: { doctorId: DOCTOR_ID } }),
       );
     });
 
     it('doctor only sees their own results (doctorId auto-forced)', async () => {
-      resultRepo.find.mockResolvedValue([mockResult]);
+      resultRepo.findAndCount.mockResolvedValue([[mockResult], 1]);
 
-      await service.findAll(mockDoctorUser);
+      await service.findAll(mockDoctorUser, DEFAULT_PAGINATION);
 
-      expect(resultRepo.find).toHaveBeenCalledWith(
+      expect(resultRepo.findAndCount).toHaveBeenCalledWith(
         expect.objectContaining({ where: { doctorId: DOCTOR_ID } }),
       );
     });
 
     it('admin applies combined filters', async () => {
-      resultRepo.find.mockResolvedValue([mockResult]);
+      resultRepo.findAndCount.mockResolvedValue([[mockResult], 1]);
 
-      await service.findAll(mockAdminUser, PATIENT_ID, DOCTOR_ID, APPOINTMENT_ID);
+      await service.findAll(mockAdminUser, DEFAULT_PAGINATION, PATIENT_ID, DOCTOR_ID, APPOINTMENT_ID);
 
-      expect(resultRepo.find).toHaveBeenCalledWith(
+      expect(resultRepo.findAndCount).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { patientId: PATIENT_ID, doctorId: DOCTOR_ID, appointmentId: APPOINTMENT_ID },
         }),

@@ -52,10 +52,11 @@ export function AppointmentForm({ onSuccess }: Props) {
     enabled: !isDoctor,
   });
 
-  const { data: studyTypes = [] } = useQuery({
-    queryKey: ['study-types'],
-    queryFn: studyTypesService.getAll,
+  const { data: studyTypesData } = useQuery({
+    queryKey: ['study-types', 'all'],
+    queryFn: () => studyTypesService.getAll(1, 100),
   });
+  const studyTypes = studyTypesData?.data ?? [];
 
   const {
     register,

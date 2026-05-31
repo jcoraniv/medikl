@@ -53,8 +53,11 @@ const mockStudyType: StudyType = {
   updatedAt: new Date(),
 };
 
+const DEFAULT_PAGINATION = { page: 1, limit: 10 };
+
 const mockRepo = {
   find: jest.fn(),
+  findAndCount: jest.fn(),
   findOne: jest.fn(),
   create: jest.fn(),
   save: jest.fn(),
@@ -77,11 +80,15 @@ describe('StudyTypesService', () => {
   });
 
   describe('findAll', () => {
-    it('returns all study types ordered by name', async () => {
-      mockRepo.find.mockResolvedValue([mockStudyType]);
-      const result = await service.findAll();
-      expect(result).toEqual([mockStudyType]);
-      expect(mockRepo.find).toHaveBeenCalledWith({ order: { name: 'ASC' } });
+    it('returns paginated study types ordered by name', async () => {
+      mockRepo.findAndCount.mockResolvedValue([[mockStudyType], 1]);
+      const response = await service.findAll(DEFAULT_PAGINATION);
+      expect(response.data).toEqual([mockStudyType]);
+      expect(response.total).toBe(1);
+      expect(response.page).toBe(1);
+      expect(mockRepo.findAndCount).toHaveBeenCalledWith(
+        expect.objectContaining({ order: { name: 'ASC' }, skip: 0, take: 10 }),
+      );
     });
   });
 

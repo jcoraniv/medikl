@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { ActivitiesService } from '../activities/activities.service';
 import { ActivityType } from '../activities/entities/activity.entity';
 import { Appointment, AppointmentStatus } from '../appointments/entities/appointment.entity';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
+import { paginate, PaginatedResponse } from '../common/interfaces/paginated-response.interface';
 import { User, UserRole } from '../users/entities/user.entity';
 import { CreateStudyResultDto } from './dto/create-study-result.dto';
 import { UpdateStudyResultDto } from './dto/update-study-result.dto';
@@ -65,23 +67,32 @@ export class StudyResultsService {
     return fullResult;
   }
 
-  findAll(currentUser: User, patientId?: string, doctorId?: string, appointmentId?: string): Promise<StudyResult[]> {
+  async findAll(
+    currentUser: User,
+    pagination: PaginationQueryDto,
+    patientId?: string,
+    doctorId?: string,
+    appointmentId?: string,
+  ): Promise<PaginatedResponse<StudyResult>> {
+    const { page, limit } = pagination;
     const where: Record<string, string> = {};
     if (patientId) where.patientId = patientId;
     if (appointmentId) where.appointmentId = appointmentId;
 
-    // Doctors only see their own results
     if (currentUser.role === UserRole.DOCTOR) {
       where.doctorId = currentUser.id;
     } else if (doctorId) {
       where.doctorId = doctorId;
     }
 
-    return this.resultRepo.find({
+    const [data, total] = await this.resultRepo.findAndCount({
       where,
       relations: ['patient', 'doctor', 'appointment', 'appointment.studyType'],
       order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
     });
+    return paginate(data, total, page, limit);
   }
 
   async findOne(id: string): Promise<StudyResult> {

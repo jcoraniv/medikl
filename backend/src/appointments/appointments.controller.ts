@@ -2,6 +2,7 @@ import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query } from 
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { User, UserRole } from '../users/entities/user.entity';
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
@@ -21,18 +22,19 @@ export class AppointmentsController {
     return this.appointmentsService.create(dto, currentUser);
   }
 
-  @ApiOperation({ summary: 'List appointments with optional filters' })
+  @ApiOperation({ summary: 'List appointments with optional filters (paginated)' })
   @ApiQuery({ name: 'patientId', required: false })
   @ApiQuery({ name: 'doctorId', required: false })
   @ApiQuery({ name: 'status', required: false, enum: AppointmentStatus })
   @Get()
   findAll(
     @CurrentUser() currentUser: User,
+    @Query() pagination: PaginationQueryDto,
     @Query('patientId') patientId?: string,
     @Query('doctorId') doctorId?: string,
     @Query('status') status?: AppointmentStatus,
   ) {
-    return this.appointmentsService.findAll(currentUser, patientId, doctorId, status);
+    return this.appointmentsService.findAll(currentUser, pagination, patientId, doctorId, status);
   }
 
   @ApiOperation({ summary: 'Get appointment by id' })

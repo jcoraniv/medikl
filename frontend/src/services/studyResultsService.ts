@@ -1,16 +1,19 @@
 import api from '@/lib/axios';
 import type { StudyResult, CreateStudyResultDto, UpdateStudyResultDto } from '@/types/studyResult';
+import type { PaginatedResponse } from '@/types/pagination';
 
 interface StudyResultFilters {
   patientId?: string;
   doctorId?: string;
   appointmentId?: string;
+  page?: number;
+  limit?: number;
 }
 
 export const studyResultsService = {
-  getAll: (filters: StudyResultFilters = {}): Promise<StudyResult[]> => {
+  getAll: (filters: StudyResultFilters = {}): Promise<PaginatedResponse<StudyResult>> => {
     const params = Object.fromEntries(Object.entries(filters).filter(([, v]) => v !== undefined));
-    return api.get<StudyResult[]>('/study-results', { params }).then((r) => r.data);
+    return api.get<PaginatedResponse<StudyResult>>('/study-results', { params }).then((r) => r.data);
   },
 
   getOne: (id: string): Promise<StudyResult> =>
